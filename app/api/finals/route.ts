@@ -65,6 +65,14 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const { level, pair_label, rounds1, rounds2 } = await req.json()
 
+  if (rounds1 === undefined || rounds1 === null || rounds2 === undefined || rounds2 === null) {
+    return NextResponse.json({ error: 'กรุณากรอกคะแนนทั้งสองฝั่ง' }, { status: 400 })
+  }
+  const sum = Number(rounds1) + Number(rounds2)
+  if (Math.abs(sum - 3) > 0.001) {
+    return NextResponse.json({ error: `คะแนนรวมต้องเท่ากับ 3 (ได้ ${sum})` }, { status: 400 })
+  }
+
   const { data, error } = await supabase.from('finals')
     .update({ rounds1, rounds2, updated_at: new Date().toISOString() })
     .eq('level', level).eq('pair_label', pair_label)

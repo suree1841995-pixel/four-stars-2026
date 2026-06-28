@@ -17,8 +17,10 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const level = req.nextUrl.searchParams.get('level')!
-  const game = req.nextUrl.searchParams.get('game')!
-  const { error } = await supabase.from('game_locks').delete().eq('level', level).eq('game', parseInt(game))
+  const gameParam = req.nextUrl.searchParams.get('game')!
+  const game = parseInt(gameParam)
+  if (isNaN(game)) return NextResponse.json({ error: 'game ต้องเป็นตัวเลข' }, { status: 400 })
+  const { error } = await supabase.from('game_locks').delete().eq('level', level).eq('game', game)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
