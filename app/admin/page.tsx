@@ -655,6 +655,34 @@ export default function AdminPage() {
                   {restoreLoading ? '⏳ กำลัง restore...' : '📥 Restore จากไฟล์'}
                 </button>
               </div>
+              <hr className="border-purple-100" />
+              <div>
+                <p className="text-xs font-black text-red-600 mb-1">🗑️ รีเซ็ตข้อมูล</p>
+                <p className="text-xs text-gray-400 mb-3">แนะนำ Backup ก่อนทุกครั้ง</p>
+                <div className="flex gap-2">
+                  <button onClick={async () => {
+                    if (!confirm('ลบผลการแข่งขันทั้งหมด? (รายชื่อผู้เล่นยังอยู่)')) return
+                    const res = await fetch('/api/backup?mode=results', { method: 'DELETE' })
+                    if ((await res.json()).ok) {
+                      showMsg('✅ รีเซ็ตผลการแข่งขันแล้ว', 'info')
+                      await Promise.all([loadUnlock(), loadTables(), loadFinals()])
+                    }
+                  }} className="flex-1 py-2.5 rounded-2xl font-bold text-sm bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 active:scale-95 transition-all">
+                    🔄 Reset ผลแข่ง
+                  </button>
+                  <button onClick={async () => {
+                    if (!confirm('⚠️ ลบข้อมูลทั้งหมด รวมรายชื่อผู้เล่น? ไม่สามารถกู้คืนได้!')) return
+                    if (!confirm('กด OK อีกครั้งเพื่อยืนยัน — ข้อมูลจะหายทั้งหมด')) return
+                    const res = await fetch('/api/backup?mode=all', { method: 'DELETE' })
+                    if ((await res.json()).ok) {
+                      showMsg('✅ รีเซ็ตข้อมูลทั้งหมดแล้ว', 'info')
+                      await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadPlayers()])
+                    }
+                  }} className="flex-1 py-2.5 rounded-2xl font-bold text-sm bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 active:scale-95 transition-all">
+                    💣 Reset ทั้งหมด
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

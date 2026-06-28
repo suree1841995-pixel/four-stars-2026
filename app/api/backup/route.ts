@@ -24,6 +24,19 @@ export async function GET() {
   })
 }
 
+export async function DELETE(req: NextRequest) {
+  const mode = req.nextUrl.searchParams.get('mode') // 'results' | 'all'
+  await supabase.from('games').delete().neq('id', 0)
+  await supabase.from('finals').delete().neq('id', 0)
+  await supabase.from('tables').delete().neq('id', 0)
+  await supabase.from('game_locks').delete().neq('id', 0)
+  await supabase.from('audit_logs').delete().neq('id', 0)
+  if (mode === 'all') {
+    await supabase.from('players').delete().neq('id', 0)
+  }
+  return NextResponse.json({ ok: true })
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
