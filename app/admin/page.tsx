@@ -3,12 +3,14 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/lib/useAuth'
 import LoginScreen from '@/components/LoginScreen'
 import * as XLSX from 'xlsx'
+import QRCode from 'qrcode'
 
 type Level = 'มต้น' | 'มปลาย'
 interface UnlockGame { game: number; unlocked: boolean; done: boolean; missing: string[] }
 interface UnlockRes { games: UnlockGame[]; unlockedFinals: boolean }
 interface TableRow { game: number; table_num: number; sub_table: string; player1: { name: string; number: number } | null; player2: { name: string; number: number } | null; is_bye: boolean; scored?: boolean }
 interface Standing { rank: number; player: { id: number; name: string; number: number; room: string }; points: number; diffSum: number; w: number; t: number; l: number }
+interface AuditLog { id: number; created_at: string; level: string; game: number; sub_table: string; player1_name: string; player2_name: string; rounds1: number; rounds2: number; action: string }
 
 function gameLabel(g: number) {
   if (g === 1) return 'Random'
@@ -45,6 +47,14 @@ export default function AdminPage() {
   const [announceLoading, setAnnounceLoading] = useState(false)
   const [scoredCount, setScoredCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
+  const [lockedGames, setLockedGames] = useState<number[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [auditOpen, setAuditOpen] = useState(false)
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [qrOpen, setQrOpen] = useState(false)
+  const [backupLoading, setBackupLoading] = useState(false)
+  const [restoreFile, setRestoreFile] = useState<File | null>(null)
+  const [restoreLoading, setRestoreLoading] = useState(false)
 
   const sectionRef = { qualify: useRef<HTMLDivElement>(null), playoff: useRef<HTMLDivElement>(null), standings: useRef<HTMLDivElement>(null), manage: useRef<HTMLDivElement>(null) }
 
@@ -86,6 +96,56 @@ export default function AdminPage() {
     if (res.ok) setFinals(await res.json())
   }, [level])
 
+  const loadLocks = useCallback(async () => {
+    const res = await fetch(`/api/locks?level=${encodeURIComponent(level)}`)
+    if (res.ok) setLockedGames(await res.json())
+  }, [level])
+
+  const loadAudit = useCallback(async () => {
+    const res = await fetch(`/api/audit?level=${encodeURIComponent(level)}`)
+    if (res.ok) setAuditLogs(await res.json())
+  }, [level])
+
+  async function toggleLock(game: number) {
+    const isLocked = lockedGames.includes(game)
+    if (isLocked) {
+      await fetch(`/api/locks?level=${encodeURIComponent(level)}&game=${game}`, { method: 'DELETE' })
+      showMsg(`🔓 ปลดล็อกเกม ${game} แล้ว`, 'info')
+    } else {
+      await fetch('/api/locks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level, game }) })
+      showMsg(`🔒 ล็อกเกม ${game} แล้ว`, 'info')
+    }
+    loadLocks()
+  }
+
+  async function downloadBackup() {
+    setBackupLoading(true)
+    const res = await fetch('/api/backup')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = `fourstars-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click()
+    URL.revokeObjectURL(url)
+    setBackupLoading(false)
+  }
+
+  async function restoreBackup() {
+    if (!restoreFile) return
+    if (!confirm('⚠️ การ Restore จะลบข้อมูลทั้งหมดและแทนที่ด้วยไฟล์ backup — แน่ใจหรือไม่?')) return
+    setRestoreLoading(true)
+    try {
+      const text = await restoreFile.text()
+      const json = JSON.parse(text)
+      const res = await fetch('/api/backup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(json) })
+      const d = await res.json()
+      if (d.ok) {
+        showMsg(`✅ Restore สำเร็จ — ผู้เล่น ${d.restored.players ?? 0} คน, เกม ${d.restored.games ?? 0} รายการ`)
+        await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadPlayers()])
+      } else { showMsg(`❌ ${d.error}`, 'err') }
+    } catch { showMsg('❌ ไฟล์ไม่ถูกต้อง', 'err') }
+    setRestoreLoading(false)
+    setRestoreFile(null)
+  }
+
   // Fetch scored count for progress bar
   const loadScored = useCallback(async () => {
     if (latestGame === 0) return
@@ -97,10 +157,16 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (!authed) return
-    loadUnlock(); loadTables(); loadFinals(); loadPlayers()
+    loadUnlock(); loadTables(); loadFinals(); loadPlayers(); loadLocks()
     const id = setInterval(() => { loadUnlock(); loadTables(); if (standingsOpen) loadStandings() }, 30000)
     return () => clearInterval(id)
-  }, [authed, level, standingsOpen, loadUnlock, loadTables, loadStandings, loadFinals, loadPlayers])
+  }, [authed, level, standingsOpen, loadUnlock, loadTables, loadStandings, loadFinals, loadPlayers, loadLocks])
+
+  useEffect(() => {
+    if (!authed) return
+    QRCode.toDataURL(typeof window !== 'undefined' ? `${window.location.origin}/display` : '/display', { width: 200 })
+      .then(setQrDataUrl).catch(() => {})
+  }, [authed])
 
   useEffect(() => {
     if (latestGame > 0) loadScored()
@@ -249,6 +315,7 @@ export default function AdminPage() {
           <button onClick={() => scrollTo('playoff')} className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 transition">🏆 เพลย์ออฟ</button>
           <button onClick={() => scrollTo('standings')} className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 transition">📊 อันดับ</button>
           <button onClick={() => scrollTo('manage')} className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 transition">👥 จัดการ</button>
+          <button onClick={() => { setAuditOpen(true); loadAudit(); setTimeout(() => document.querySelector('[data-audit]')?.scrollIntoView({ behavior: 'smooth' }), 100) }} className="shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-100 transition">📋 ประวัติ</button>
         </div>
       </div>
 
@@ -296,17 +363,28 @@ export default function AdminPage() {
                 const locked = info ? !info.unlocked : g > 1
                 const isCurrent = latestGame === g
                 const label = g === gameCount ? 'King of the Hill' : gameLabel(g)
+                const isGameLocked = lockedGames.includes(g)
                 return (
-                  <button key={g} disabled={locked || loading} onClick={() => generateTables(g)}
-                    className={`relative py-4 px-2 rounded-2xl border-2 font-bold text-sm transition-all active:scale-95
-                      ${done ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : locked ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : isCurrent ? 'bg-violet-50 border-violet-500 text-violet-700 hover:bg-violet-100' : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'}`}>
-                    {done && <span className="absolute top-1.5 right-2 text-emerald-500 text-xs">✓</span>}
-                    {locked && <span className="absolute top-1.5 right-2 text-gray-400 text-xs">🔒</span>}
-                    {isCurrent && !done && <span className="absolute top-1.5 left-2 w-2 h-2 rounded-full bg-green-400"></span>}
-                    <div className="font-black">เกม {g}</div>
-                    <div className="text-xs font-normal mt-0.5 opacity-80">{label}</div>
-                    {loading && isCurrent && <div className="text-xs mt-1">⏳</div>}
-                  </button>
+                  <div key={g} className="relative">
+                    <button disabled={locked || loading} onClick={() => generateTables(g)}
+                      className={`w-full relative py-4 px-2 rounded-2xl border-2 font-bold text-sm transition-all active:scale-95
+                        ${isGameLocked ? 'bg-red-50 border-red-300 text-red-500' : done ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : locked ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : isCurrent ? 'bg-violet-50 border-violet-500 text-violet-700 hover:bg-violet-100' : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'}`}>
+                      {done && !isGameLocked && <span className="absolute top-1.5 right-2 text-emerald-500 text-xs">✓</span>}
+                      {locked && !isGameLocked && <span className="absolute top-1.5 right-2 text-gray-400 text-xs">🔒</span>}
+                      {isGameLocked && <span className="absolute top-1.5 right-2 text-red-400 text-xs">🔐</span>}
+                      {isCurrent && !done && <span className="absolute top-1.5 left-2 w-2 h-2 rounded-full bg-green-400"></span>}
+                      <div className="font-black">เกม {g}</div>
+                      <div className="text-xs font-normal mt-0.5 opacity-80">{label}</div>
+                      {loading && isCurrent && <div className="text-xs mt-1">⏳</div>}
+                    </button>
+                    {done && (
+                      <button onClick={() => toggleLock(g)}
+                        title={isGameLocked ? 'ปลดล็อก' : 'ล็อกเกมนี้'}
+                        className={`absolute bottom-1.5 left-1/2 -translate-x-1/2 text-[10px] px-2 py-0.5 rounded-lg font-bold transition ${isGameLocked ? 'bg-red-200 text-red-700 hover:bg-red-300' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                        {isGameLocked ? '🔐 ล็อก' : '🔓 ล็อก?'}
+                      </button>
+                    )}
+                  </div>
                 )
               })}
             </div>
@@ -497,6 +575,87 @@ export default function AdminPage() {
               </a>
             </div>
             <p className="text-xs text-purple-400 mt-2">ดาวน์โหลดอันดับและผลรอบชิงเป็นไฟล์ Excel</p>
+          </div>
+        </div>
+
+        {/* ── SECTION: QR Code ── */}
+        <div className="mt-5">
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-purple-100">
+            <button className="w-full flex items-center justify-between font-black text-purple-800"
+              onClick={() => setQrOpen(v => !v)}>
+              <span>📱 QR Code หน้าจอแสดงผล</span>
+              <span className="text-purple-400">{qrOpen ? '▲' : '▼'}</span>
+            </button>
+            {qrOpen && (
+              <div className="mt-4 flex flex-col items-center gap-3">
+                {qrDataUrl
+                  ? <img src={qrDataUrl} alt="QR Display" className="w-48 h-48 rounded-2xl border-4 border-purple-200 shadow" />
+                  : <div className="w-48 h-48 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-300">กำลังสร้าง...</div>}
+                <p className="text-xs text-purple-500 font-semibold">สแกนเพื่อเปิดหน้าจอ display</p>
+                <p className="text-xs text-purple-300 break-all">{typeof window !== 'undefined' ? `${window.location.origin}/display` : '/display'}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── SECTION: Audit Log ── */}
+        <div className="mt-5">
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-purple-100">
+            <button className="w-full flex items-center justify-between font-black text-purple-800"
+              onClick={() => { setAuditOpen(v => !v); if (!auditOpen) loadAudit() }}>
+              <span>📋 ประวัติการกรอกคะแนน</span>
+              <span className="text-purple-400">{auditOpen ? '▲' : '▼'}</span>
+            </button>
+            {auditOpen && (
+              <div className="mt-4">
+                <button onClick={loadAudit} className="text-xs font-bold px-3 py-1.5 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition mb-3">🔄 รีเฟรช</button>
+                {auditLogs.length === 0
+                  ? <p className="text-xs text-center text-purple-300 py-4">ยังไม่มีประวัติ</p>
+                  : (
+                    <div className="space-y-1.5 max-h-80 overflow-y-auto">
+                      {auditLogs.map(log => (
+                        <div key={log.id} className="bg-purple-50 rounded-2xl px-3 py-2.5 border border-purple-100 text-xs">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className={`px-2 py-0.5 rounded-lg font-bold text-[10px] ${log.action === 'overwrite' ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100 text-emerald-700'}`}>
+                              {log.action === 'overwrite' ? '✏️ แก้ไข' : '✅ กรอก'}
+                            </span>
+                            <span className="font-black text-purple-700">เกม {log.game} โต๊ะ {log.sub_table}</span>
+                            <span className="text-purple-400 ml-auto">{new Date(log.created_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span>
+                          </div>
+                          <div className="text-purple-600">{log.player1_name} <span className="font-black">{log.rounds1}</span> vs <span className="font-black">{log.rounds2}</span> {log.player2_name}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── SECTION: Backup/Restore ── */}
+        <div className="mt-5">
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-purple-100">
+            <h2 className="font-black text-purple-800 mb-3">💾 Backup &amp; Restore</h2>
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-purple-500 mb-2">Export ข้อมูลทั้งหมด (ผู้เล่น + ผลการแข่งขัน) เป็นไฟล์ JSON</p>
+                <button disabled={backupLoading} onClick={downloadBackup}
+                  className="w-full py-2.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-40">
+                  {backupLoading ? '⏳ กำลัง export...' : '📤 Download Backup (.json)'}
+                </button>
+              </div>
+              <hr className="border-purple-100" />
+              <div>
+                <p className="text-xs text-red-400 font-bold mb-2">⚠️ Restore จะลบข้อมูลทั้งหมดในระบบก่อน แล้วนำเข้าจากไฟล์</p>
+                <input type="file" accept=".json"
+                  onChange={e => setRestoreFile(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-purple-700 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-red-100 file:text-red-700 hover:file:bg-red-200 mb-2" />
+                <button disabled={!restoreFile || restoreLoading} onClick={restoreBackup}
+                  className="w-full py-2.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-red-500 to-rose-500 text-white shadow hover:opacity-90 active:scale-95 transition-all disabled:opacity-40">
+                  {restoreLoading ? '⏳ กำลัง restore...' : '📥 Restore จากไฟล์'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

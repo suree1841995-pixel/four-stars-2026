@@ -18,6 +18,12 @@ export async function POST(req: NextRequest) {
   const { game, level, sub_table, player1_id, rounds1, player2_id, rounds2, force = false } = body
   const table_num = parseInt(sub_table.replace(/[^0-9]/g, ''), 10)
 
+  // ตรวจว่าเกมถูกล็อกอยู่หรือเปล่า
+  const { data: lockData } = await supabase.from('game_locks').select('id').eq('level', level).eq('game', game).maybeSingle()
+  if (lockData) {
+    return NextResponse.json({ error: `เกม ${game} ถูกล็อกแล้ว — ปลดล็อกก่อนใน Admin` }, { status: 403 })
+  }
+
   // ตรวจว่ามีผลเดิมอยู่แล้วหรือเปล่า
   if (!force) {
     const { data: existing } = await supabase.from('games')
@@ -35,8 +41,18 @@ export async function POST(req: NextRequest) {
       { game, level, table_num, sub_table, player1_id, rounds1, player2_id, rounds2, updated_at: new Date().toISOString() },
       { onConflict: 'game,level,sub_table' }
     )
-    .select().single()
+    .select('*, player1:player1_id(name), player2:player2_id(name)').single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // บันทึก audit log
+  await supabase.from('audit_logs').insert({
+    level, game, sub_table,
+    player1_name: (data.player1 as { name: string } | null)?.name ?? '',
+    player2_name: (data.player2 as { name: string } | null)?.name ?? '',
+    rounds1, rounds2,
+    action: force ? 'overwrite' : 'score',
+  })
+
   return NextResponse.json(data)
 }
