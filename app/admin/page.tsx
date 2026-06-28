@@ -234,9 +234,11 @@ export default function AdminPage() {
       }).filter(r => r.name && r.level)
       const res = await fetch('/api/players/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows, force: false }) })
       const d = await res.json()
+      if (!res.ok) { setImportMsg(`❌ ${d.error ?? 'นำเข้าไม่สำเร็จ'}`); return }
       if (d.duplicates?.length) {
         const res2 = await fetch('/api/players/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows, force: true }) })
         const d2 = await res2.json()
+        if (!res2.ok) { setImportMsg(`❌ ${d2.error ?? 'นำเข้าไม่สำเร็จ'}`); return }
         setImportMsg(`✅ เพิ่ม ${d2.inserted} คน (ข้ามซ้ำ ${d2.duplicatesSkipped} คน)`)
       } else {
         setImportMsg(`✅ เพิ่มผู้เล่น ${d.inserted} คน สำเร็จ`)

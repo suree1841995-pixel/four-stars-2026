@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 // คืนสถานะปลดล็อกของปุ่มเกม 1-6 ทั้งหมด
 export async function GET(req: NextRequest) {
   const level = req.nextUrl.searchParams.get('level')!
-  const totalGames = parseInt(req.nextUrl.searchParams.get('totalGames') || '6')
+  const totalGames = parseInt(req.nextUrl.searchParams.get('totalGames') || '6') || 6
 
   const { data: ta } = await supabase.from('table_assignments')
     .select('game, sub_table, is_bye').eq('level', level)
