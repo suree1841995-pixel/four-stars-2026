@@ -68,6 +68,9 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const { level, pair_label, rounds1, rounds2 } = await req.json()
 
+  if (!level || !pair_label) {
+    return NextResponse.json({ error: 'ข้อมูลไม่ครบ (level, pair_label)' }, { status: 400 })
+  }
   if (rounds1 === undefined || rounds1 === null || rounds2 === undefined || rounds2 === null) {
     return NextResponse.json({ error: 'กรุณากรอกคะแนนทั้งสองฝั่ง' }, { status: 400 })
   }

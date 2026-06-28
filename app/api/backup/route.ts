@@ -81,7 +81,8 @@ export async function POST(req: NextRequest) {
         player1_id: player1_id != null ? (idMap[player1_id as number] ?? player1_id) : null,
         player2_id: player2_id != null ? (idMap[player2_id as number] ?? player2_id) : null,
       }))
-      await supabase.from('table_assignments').insert(remapped)
+      const { error: taErr } = await supabase.from('table_assignments').insert(remapped)
+      if (taErr) return NextResponse.json({ error: `นำเข้าโต๊ะไม่สำเร็จ: ${taErr.message}` }, { status: 500 })
       results.tables = body.tables.length
     }
 
@@ -92,7 +93,8 @@ export async function POST(req: NextRequest) {
         player1_id: player1_id != null ? (idMap[player1_id as number] ?? player1_id) : null,
         player2_id: player2_id != null ? (idMap[player2_id as number] ?? player2_id) : null,
       }))
-      await supabase.from('games').insert(remapped)
+      const { error: gamesErr } = await supabase.from('games').insert(remapped)
+      if (gamesErr) return NextResponse.json({ error: `นำเข้าผลเกมไม่สำเร็จ: ${gamesErr.message}` }, { status: 500 })
       results.games = body.games.length
     }
 
@@ -103,7 +105,8 @@ export async function POST(req: NextRequest) {
         player1_id: player1_id != null ? (idMap[player1_id as number] ?? player1_id) : null,
         player2_id: player2_id != null ? (idMap[player2_id as number] ?? player2_id) : null,
       }))
-      await supabase.from('finals').insert(remapped)
+      const { error: finalsErr } = await supabase.from('finals').insert(remapped)
+      if (finalsErr) return NextResponse.json({ error: `นำเข้ารอบชิงไม่สำเร็จ: ${finalsErr.message}` }, { status: 500 })
       results.finals = body.finals.length
     }
 

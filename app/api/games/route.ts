@@ -16,7 +16,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { game, level, sub_table, player1_id, rounds1, player2_id, rounds2, force = false } = body
-  const table_num = parseInt(sub_table.replace(/[^0-9]/g, ''), 10)
+
+  if (!game || !level || !sub_table || !player1_id) {
+    return NextResponse.json({ error: 'ข้อมูลไม่ครบ (game, level, sub_table, player1_id)' }, { status: 400 })
+  }
+  const table_num = parseInt(String(sub_table).replace(/[^0-9]/g, ''), 10)
+  if (isNaN(table_num)) {
+    return NextResponse.json({ error: `sub_table ไม่ถูกต้อง: ${sub_table}` }, { status: 400 })
+  }
 
   // ตรวจคะแนนรวมต้องเท่ากับ 3
   if (!body.is_bye && rounds1 !== null && rounds2 !== null) {
