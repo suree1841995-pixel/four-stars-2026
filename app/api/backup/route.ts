@@ -31,6 +31,7 @@ export async function DELETE(req: NextRequest) {
   await supabase.from('tables').delete().neq('id', 0)
   await supabase.from('game_locks').delete().neq('id', 0)
   await supabase.from('audit_logs').delete().neq('id', 0)
+  await supabase.from('broadcast').delete().neq('id', 0)
   if (mode === 'all') {
     await supabase.from('players').delete().neq('id', 0)
   }

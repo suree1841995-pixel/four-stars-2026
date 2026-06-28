@@ -665,7 +665,8 @@ export default function AdminPage() {
                     const res = await fetch('/api/backup?mode=results', { method: 'DELETE' })
                     if ((await res.json()).ok) {
                       showMsg('✅ รีเซ็ตผลการแข่งขันแล้ว', 'info')
-                      await Promise.all([loadUnlock(), loadTables(), loadFinals()])
+                      setLatestGame(0); setAllTables([]); setFinals([]); setUnlock(null)
+                      await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadLocks()])
                     }
                   }} className="flex-1 py-2.5 rounded-2xl font-bold text-sm bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200 active:scale-95 transition-all">
                     🔄 Reset ผลแข่ง
@@ -676,7 +677,8 @@ export default function AdminPage() {
                     const res = await fetch('/api/backup?mode=all', { method: 'DELETE' })
                     if ((await res.json()).ok) {
                       showMsg('✅ รีเซ็ตข้อมูลทั้งหมดแล้ว', 'info')
-                      await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadPlayers()])
+                      setLatestGame(0); setAllTables([]); setFinals([]); setUnlock(null); setPlayers([])
+                      await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadPlayers(), loadLocks()])
                     }
                   }} className="flex-1 py-2.5 rounded-2xl font-bold text-sm bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 active:scale-95 transition-all">
                     💣 Reset ทั้งหมด
