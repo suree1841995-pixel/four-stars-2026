@@ -54,10 +54,8 @@ export default function DisplayPage() {
     setLatestGame(maxGame)
     setTables(taRows.filter(r => r.game === maxGame))
     setFinalsRows((f || []) as FinalRow[])
-    // scored set สำหรับ highlight โต๊ะที่กรอกแล้ว
-    const { data: scoredData } = await supabase.from('games').select('game, sub_table').eq('level', level)
-    const maxG = taRows.reduce((m, r) => Math.max(m, r.game), 0)
-    setScoredSet(new Set((scoredData || []).filter((r: { game: number }) => r.game === maxG).map((r: { sub_table: string }) => r.sub_table)))
+    // scored set — ใช้ข้อมูล games ที่ fetch มาแล้ว ไม่ต้อง fetch ซ้ำ
+    setScoredSet(new Set((gs).filter((r: GameRow) => r.game === maxGame).map((r: GameRow) => r.sub_table)))
     setLastUpdate(new Date().toLocaleTimeString('th-TH'))
     setRealtimeOk(true)
     if (realtimeTimer.current) clearTimeout(realtimeTimer.current)

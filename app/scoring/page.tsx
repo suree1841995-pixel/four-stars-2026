@@ -213,7 +213,7 @@ export default function ScoringPage() {
         {/* Level toggle */}
         <div className="flex bg-white rounded-2xl p-1.5 border-2 border-purple-200 shadow-sm">
           {(['มต้น', 'มปลาย'] as Level[]).map(lv => (
-            <button key={lv} onClick={() => { setLevel(lv); setUserPickedGame(false); setTableNum(''); setTableSide(''); setLookupStatus('idle') }}
+            <button key={lv} onClick={() => { setLevel(lv); setUserPickedGame(false); setGameNum(''); setTableNum(''); setTableSide(''); setLookupStatus('idle'); setId1(''); setId2(''); setName1(''); setName2('') }}
               className={`flex-1 py-2.5 rounded-xl font-bold text-sm transition-all ${level === lv ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow' : 'text-purple-400 hover:text-purple-700'}`}>
               {lv === 'มต้น' ? 'ม.ต้น' : 'ม.ปลาย'}
             </button>
