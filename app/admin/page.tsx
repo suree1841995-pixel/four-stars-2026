@@ -125,7 +125,7 @@ export default function AdminPage() {
     })
     setLoading(false)
     if (res.ok) {
-      showMsg(`✅ จัดโต๊ะเกม ${game} (${GAME_LABELS[game]}) สำเร็จ`)
+      showMsg(`✅ จัดโต๊ะเกม ${game} (${game === gameCount ? 'King of the Hill' : gameLabel(game)}) สำเร็จ`)
       await Promise.all([loadUnlock(), loadTables()])
     } else {
       const d = await res.json(); showMsg(`❌ ${d.error}`, 'err')
