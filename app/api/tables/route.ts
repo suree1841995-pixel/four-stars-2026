@@ -84,9 +84,11 @@ export async function POST(req: NextRequest) {
       const tn = row.table_num
       if (!tableMap[tn]) tableMap[tn] = { table_num: tn, pairA: null, pairB: null, byeA: null, byeB: null }
       const t = tableMap[tn]
+      if (!row.player1) continue
       if (row.is_bye) { t.byeA = row.player1 as Player; continue }
-      if (row.sub_table.endsWith('A')) t.pairA = { p1: row.player1 as Player, p2: row.player2 as Player }
-      else {
+      if (row.sub_table.endsWith('A')) {
+        if (row.player2) t.pairA = { p1: row.player1 as Player, p2: row.player2 as Player }
+      } else {
         if (!row.player2) t.byeB = row.player1 as Player
         else t.pairB = { p1: row.player1 as Player, p2: row.player2 as Player }
       }
@@ -131,7 +133,8 @@ export async function POST(req: NextRequest) {
   if (insertErr) return NextResponse.json({ error: insertErr.message }, { status: 500 })
 
   for (const br of byeGameRows) {
-    await supabase.from('games').upsert(br, { onConflict: 'game,level,sub_table' })
+    const { error: byeErr } = await supabase.from('games').upsert(br, { onConflict: 'game,level,sub_table' })
+    if (byeErr) console.error('bye upsert error:', byeErr.message)
   }
 
   await supabase.from('broadcast').insert({ type: 'current_game', level, payload: { game } })

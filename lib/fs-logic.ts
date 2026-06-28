@@ -136,7 +136,11 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
     if (b.points !== a.points) return b.points - a.points
     return b.diffSum - a.diffSum
   })
-  list.forEach((s, i) => { s.rank = i + 1 })
+  list.forEach((s, i) => {
+    if (i === 0) { s.rank = 1; return }
+    const prev = list[i - 1]
+    s.rank = (prev.points === s.points && prev.diffSum === s.diffSum) ? prev.rank : i + 1
+  })
   return list
 }
 
@@ -204,8 +208,10 @@ export function generateCrossover(
     function getWinLose(g: GameRow | undefined, def1: Player, def2: Player) {
       if (!g) return { winner: def1, loser: def2 }
       const r = computeMatchResult(g.rounds1, g.rounds2)
-      if (r.result1 === 'W') return { winner: playerMap[g.player1_id], loser: playerMap[g.player2_id!] }
-      if (r.result2 === 'W') return { winner: playerMap[g.player2_id!], loser: playerMap[g.player1_id] }
+      const p1 = playerMap[g.player1_id] ?? def1
+      const p2 = playerMap[g.player2_id!] ?? def2
+      if (r.result1 === 'W') return { winner: p1, loser: p2 }
+      if (r.result2 === 'W') return { winner: p2, loser: p1 }
       return { winner: def1, loser: def2 }
     }
 

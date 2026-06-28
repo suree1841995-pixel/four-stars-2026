@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
   const { data: allGames } = await supabase.from('games').select('*').eq('level', level)
   const standings = computeStandings((players || []) as Player[], (allGames || []) as GameRow[])
 
+  if (standings.length < 4) {
+    return NextResponse.json({ error: `ผู้เล่นไม่ครบ 4 คนสำหรับรอบชิง (มีเพียง ${standings.length} คน)` }, { status: 400 })
+  }
   let matchups
   try {
     matchups = buildFinalsMatchups(standings)

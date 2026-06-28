@@ -157,7 +157,12 @@ export default function ScoringPage() {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ level, pair_label: pairLabel, rounds1: Number(rounds1), rounds2: Number(rounds2) })
         })
-        if (!res.ok) { const d = await res.json(); setStatus({ text: `❌ ${d.error}`, type: 'err' }); return }
+        if (!res.ok) {
+          const errText = await res.text()
+          let errMsg = 'เกิดข้อผิดพลาด'
+          try { errMsg = JSON.parse(errText).error ?? errMsg } catch { /* ignore */ }
+          setStatus({ text: `❌ ${errMsg}`, type: 'err' }); return
+        }
         setStatus({ text: `✅ บันทึก ${pairLabel} สำเร็จ`, type: 'ok' })
       }
       setRounds1(''); setRounds2('')

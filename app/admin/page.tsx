@@ -132,16 +132,22 @@ export default function AdminPage() {
     if (!restoreFile) return
     if (!confirm('⚠️ การ Restore จะลบข้อมูลทั้งหมดและแทนที่ด้วยไฟล์ backup — แน่ใจหรือไม่?')) return
     setRestoreLoading(true)
+    let json: unknown
     try {
       const text = await restoreFile.text()
-      const json = JSON.parse(text)
+      json = JSON.parse(text)
+    } catch {
+      showMsg('❌ ไฟล์ JSON ไม่ถูกต้อง — ตรวจสอบไฟล์อีกครั้ง', 'err')
+      setRestoreLoading(false); return
+    }
+    try {
       const res = await fetch('/api/backup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(json) })
       const d = await res.json()
       if (d.ok) {
         showMsg(`✅ Restore สำเร็จ — ผู้เล่น ${d.restored.players ?? 0} คน, เกม ${d.restored.games ?? 0} รายการ`)
         await Promise.all([loadUnlock(), loadTables(), loadFinals(), loadPlayers()])
       } else { showMsg(`❌ ${d.error}`, 'err') }
-    } catch { showMsg('❌ ไฟล์ไม่ถูกต้อง', 'err') }
+    } catch { showMsg('❌ เชื่อมต่อ server ไม่ได้ — ลองใหม่อีกครั้ง', 'err') }
     setRestoreLoading(false)
     setRestoreFile(null)
   }

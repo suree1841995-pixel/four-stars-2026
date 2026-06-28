@@ -49,13 +49,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     if (body.version !== 1) return NextResponse.json({ error: 'ไฟล์ backup ไม่รองรับ version นี้' }, { status: 400 })
 
-    // ลบข้อมูลเดิม
-    await Promise.all([
+    // ลบข้อมูลเดิม (ต้องลบทีละตาราง FK ก่อน)
+    const delResults = await Promise.all([
       supabase.from('games').delete().neq('id', 0),
       supabase.from('finals').delete().neq('id', 0),
       supabase.from('table_assignments').delete().neq('id', 0),
     ])
-    await supabase.from('players').delete().neq('id', 0)
+    const delErr = delResults.find(r => r.error)
+    if (delErr?.error) return NextResponse.json({ error: `ลบข้อมูลเดิมไม่สำเร็จ: ${delErr.error.message}` }, { status: 500 })
+    const { error: playerDelErr } = await supabase.from('players').delete().neq('id', 0)
+    if (playerDelErr) return NextResponse.json({ error: `ลบผู้เล่นเดิมไม่สำเร็จ: ${playerDelErr.message}` }, { status: 500 })
 
     const results: Record<string, number> = {}
 
@@ -64,7 +67,8 @@ export async function POST(req: NextRequest) {
     if (body.players?.length) {
       for (const p of body.players) {
         const { id: oldId, ...rest } = p as Record<string, unknown>
-        const { data } = await supabase.from('players').insert(rest).select('id').single()
+        const { data, error: insErr } = await supabase.from('players').insert(rest).select('id').single()
+        if (insErr) return NextResponse.json({ error: `เพิ่มผู้เล่นไม่สำเร็จ: ${insErr.message}` }, { status: 500 })
         if (data && oldId !== undefined) idMap[oldId as number] = data.id
       }
       results.players = Object.keys(idMap).length
