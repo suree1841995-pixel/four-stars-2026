@@ -84,8 +84,9 @@ export async function PATCH(req: NextRequest) {
   const { data, error } = await supabase.from('finals')
     .update({ rounds1, rounds2, updated_at: new Date().toISOString() })
     .eq('level', level).eq('pair_label', pair_label)
-    .select().single()
+    .select().maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: `ไม่พบคู่ชิง "${pair_label}" — สร้างรอบชิงก่อน` }, { status: 404 })
   return NextResponse.json(data)
 }

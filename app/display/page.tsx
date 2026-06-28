@@ -165,7 +165,7 @@ export default function DisplayPage() {
           {/* Level toggle */}
           <div className="flex rounded-2xl p-1 border-2 gap-1" style={{ background: dk.card, borderColor: dk.border }}>
             {(['มต้น', 'มปลาย'] as Level[]).map(lv => (
-              <button key={lv} onClick={() => setLevel(lv)}
+              <button key={lv} onClick={() => { setLevel(lv); setAnnouncement(null) }}
                 className={`flex-1 py-2 rounded-xl font-bold text-sm transition-all ${level === lv ? 'bg-gradient-to-r from-violet-600 to-purple-500 text-white shadow' : `${dk.subtext} hover:opacity-80`}`}>
                 {lv === 'มต้น' ? '🌱 ม.ต้น' : '🌸 ม.ปลาย'}
               </button>
