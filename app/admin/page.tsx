@@ -200,6 +200,7 @@ export default function AdminPage() {
 
   async function suggestGibsonize() {
     const res = await fetch(`/api/gibsonize?level=${encodeURIComponent(level)}`)
+    if (!res.ok) { showMsg('❌ ไม่สามารถดึงข้อมูลได้', 'err'); return }
     const d = await res.json()
     if (!d.hasEnoughPlayers) { showMsg('ผู้เล่นไม่ครบ 5 คน', 'info'); return }
     if (!d.suggested?.length) { showMsg('ยังไม่มีใครคะแนนลอยลำ', 'info'); setGibsonSuggest([]); return }
@@ -265,9 +266,10 @@ export default function AdminPage() {
     setAddLoading(false)
     if (d.error) { showMsg(`❌ ${d.error}`, 'err'); return }
     if (d.duplicates?.length) { showMsg(`⚠️ "${addName.trim()}" มีในระบบแล้ว`, 'info'); return }
+    const savedName = addName.trim()
     setAddName(''); setAddRoom('')
-    loadPlayers()
-    showMsg(`✅ เพิ่ม ${addName.trim()} สำเร็จ`)
+    await loadPlayers()
+    showMsg(`✅ เพิ่ม ${savedName} สำเร็จ`)
   }
 
   async function savePlayer(id: number) {
