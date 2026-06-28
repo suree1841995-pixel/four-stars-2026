@@ -63,7 +63,13 @@ export async function POST(req: NextRequest) {
     const prevGames = Array.from({ length: game - 1 }, (_, i) => i + 1)
     const { data: allScores } = await supabase.from('games').select('*').eq('level', level).in('game', prevGames)
     const standings = computeStandings(players, (allScores || []) as GameRow[])
-    tables = generateKingOfHill(standings, gibsonizedIds)
+    const played = new Set<string>()
+    for (const g of (allScores || []) as GameRow[]) {
+      if (g.player1_id && g.player2_id) {
+        played.add(`${Math.min(g.player1_id, g.player2_id)}_${Math.max(g.player1_id, g.player2_id)}`)
+      }
+    }
+    tables = generateKingOfHill(standings, gibsonizedIds, played)
   } else if (game % 2 === 0) {
     // เลขคู่ = ไขว้
     const prevGame = game - 1
@@ -92,7 +98,13 @@ export async function POST(req: NextRequest) {
     const prevGames = Array.from({ length: game - 1 }, (_, i) => i + 1)
     const { data: allScores } = await supabase.from('games').select('*').eq('level', level).in('game', prevGames)
     const standings = computeStandings(players, (allScores || []) as GameRow[])
-    tables = generateSwiss(standings)
+    const played = new Set<string>()
+    for (const g of (allScores || []) as GameRow[]) {
+      if (g.player1_id && g.player2_id) {
+        played.add(`${Math.min(g.player1_id, g.player2_id)}_${Math.max(g.player1_id, g.player2_id)}`)
+      }
+    }
+    tables = generateSwiss(standings, played)
   }
 
   // ลบของเดิมแล้ว insert ใหม่

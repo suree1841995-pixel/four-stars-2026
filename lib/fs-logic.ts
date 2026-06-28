@@ -223,9 +223,29 @@ export function generateCrossover(
 
 // ============================================================
 //  เกม 3, 5: Swiss (เรียงแต้ม → ผลต่าง → สุ่มในกลุ่มเท่ากัน)
+//  played = Set ของคู่ที่เคยแข่งกันแล้ว รูปแบบ "minId_maxId"
 // ============================================================
-export function generateSwiss(standings: Standing[]): TableDef[] {
-  // จัดกลุ่มตาม points+diffSum แล้วสุ่มภายในกลุ่ม
+function swissPairKey(id1: number, id2: number): string {
+  return `${Math.min(id1, id2)}_${Math.max(id1, id2)}`
+}
+
+function avoidRematches(players: Player[], played: Set<string>): Player[] {
+  const arr = [...players]
+  for (let i = 0; i + 1 < arr.length; i += 2) {
+    if (!played.has(swissPairKey(arr[i].id, arr[i + 1].id))) continue
+    // หาคนที่ยังไม่เคยเจอ arr[i] มาสลับกับ arr[i+1]
+    for (let j = i + 2; j < arr.length; j++) {
+      if (!played.has(swissPairKey(arr[i].id, arr[j].id))) {
+        ;[arr[i + 1], arr[j]] = [arr[j], arr[i + 1]]
+        break
+      }
+    }
+    // ถ้าหาไม่ได้ → ยอมให้เจอซ้ำ (fallback)
+  }
+  return arr
+}
+
+export function generateSwiss(standings: Standing[], played?: Set<string>): TableDef[] {
   const groups: Standing[][] = []
   const sorted = [...standings].sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points
@@ -241,16 +261,17 @@ export function generateSwiss(standings: Standing[]): TableDef[] {
     i = j
   }
   const players = groups.flatMap(g => shuffle(g).map(s => s.player))
-  return splitIntoTables(players)
+  const final = (played && played.size > 0) ? avoidRematches(players, played) : players
+  return splitIntoTables(final)
 }
 
 // ============================================================
 //  เกม 6: King of the Hill (Swiss แต่ exclude คน Gibsonize)
 // ============================================================
-export function generateKingOfHill(standings: Standing[], gibsonizedIds: number[]): TableDef[] {
+export function generateKingOfHill(standings: Standing[], gibsonizedIds: number[], played?: Set<string>): TableDef[] {
   const excluded = new Set(gibsonizedIds)
   const eligible = standings.filter(s => !excluded.has(s.player.id))
-  return generateSwiss(eligible)
+  return generateSwiss(eligible, played)
 }
 
 // ============================================================
