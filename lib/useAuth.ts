@@ -3,9 +3,6 @@ import { useState, useEffect } from 'react'
 
 export type AuthRole = 'admin' | 'scoring'
 
-const ADMIN_PW = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '1407'
-const SCORING_PW = process.env.NEXT_PUBLIC_SCORING_PASSWORD || '123456'
-
 export function useAuth(role: AuthRole) {
   const SESSION_KEY = `fs_auth_${role}`
   const [authed, setAuthed] = useState(false)
@@ -16,9 +13,13 @@ export function useAuth(role: AuthRole) {
     setChecked(true)
   }, [SESSION_KEY])
 
-  function login(pw: string) {
-    const correct = role === 'admin' ? ADMIN_PW : SCORING_PW
-    if (pw === correct) {
+  async function login(pw: string): Promise<boolean> {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, password: pw }),
+    })
+    if (res.ok) {
       sessionStorage.setItem(SESSION_KEY, '1')
       setAuthed(true)
       return true

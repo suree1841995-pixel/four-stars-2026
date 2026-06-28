@@ -66,6 +66,8 @@ export default function DisplayPage() {
 
   useEffect(() => {
     loadAll()
+    // fallback polling ทุก 30 วินาที เผื่อ realtime ขาด
+    const pollId = setInterval(loadAll, 30000)
     const ch = supabase.channel(`fs-display-${level}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `level=eq.${level}` }, loadAll)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'table_assignments', filter: `level=eq.${level}` }, loadAll)
@@ -83,7 +85,7 @@ export default function DisplayPage() {
         if (status === 'SUBSCRIBED') setRealtimeOk(true)
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setRealtimeOk(false)
       })
-    return () => { supabase.removeChannel(ch); if (realtimeTimer.current) clearTimeout(realtimeTimer.current) }
+    return () => { clearInterval(pollId); supabase.removeChannel(ch); if (realtimeTimer.current) clearTimeout(realtimeTimer.current) }
   }, [level, loadAll])
 
   const standings = computeStandings(players, gameRows)

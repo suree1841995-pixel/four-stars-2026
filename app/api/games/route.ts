@@ -18,6 +18,14 @@ export async function POST(req: NextRequest) {
   const { game, level, sub_table, player1_id, rounds1, player2_id, rounds2, force = false } = body
   const table_num = parseInt(sub_table.replace(/[^0-9]/g, ''), 10)
 
+  // ตรวจคะแนนรวมต้องเท่ากับ 3
+  if (!body.is_bye && rounds1 !== null && rounds2 !== null) {
+    const sum = Number(rounds1) + Number(rounds2)
+    if (Math.abs(sum - 3) > 0.001) {
+      return NextResponse.json({ error: `คะแนนรวมต้องเท่ากับ 3 (ได้ ${sum})` }, { status: 400 })
+    }
+  }
+
   // ตรวจว่าเกมถูกล็อกอยู่หรือเปล่า
   const { data: lockData } = await supabase.from('game_locks').select('id').eq('level', level).eq('game', game).maybeSingle()
   if (lockData) {
