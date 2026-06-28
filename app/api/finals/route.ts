@@ -54,10 +54,11 @@ export async function POST(req: NextRequest) {
 
   // upsert ทั้งสองคู่
   for (const m of matchups) {
-    await supabase.from('finals').upsert(
+    const { error: upsertErr } = await supabase.from('finals').upsert(
       { level, pair_label: m.pairLabel, player1_id: m.p1.id, player2_id: m.p2.id, rounds1: null, rounds2: null },
       { onConflict: 'level,pair_label' }
     )
+    if (upsertErr) return NextResponse.json({ error: `บันทึกคู่ชิงไม่สำเร็จ: ${upsertErr.message}` }, { status: 500 })
   }
 
   await supabase.from('broadcast').insert({ type: 'finals_created', level, payload: {} })

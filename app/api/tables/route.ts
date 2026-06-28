@@ -110,7 +110,8 @@ export async function POST(req: NextRequest) {
   }
 
   // ลบของเดิมแล้ว insert ใหม่
-  await supabase.from('table_assignments').delete().eq('level', level).eq('game', game)
+  const { error: delErr } = await supabase.from('table_assignments').delete().eq('level', level).eq('game', game)
+  if (delErr) return NextResponse.json({ error: `ลบโต๊ะเดิมไม่สำเร็จ: ${delErr.message}` }, { status: 500 })
 
   const rows: object[] = []
   const byeGameRows: object[] = []
