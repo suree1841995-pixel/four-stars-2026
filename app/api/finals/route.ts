@@ -13,21 +13,22 @@ export async function GET(req: NextRequest) {
 
 // POST /api/finals — สร้างคู่ชิง (เรียกจาก admin)
 export async function POST(req: NextRequest) {
-  const { level } = await req.json()
+  const { level, totalGames = 6 } = await req.json()
+  const lastGame = Number(totalGames)
 
-  // เช็คว่ากรอกผลเกม 6 ครบหมดหรือยัง
-  const { data: ta6 } = await supabase.from('table_assignments')
-    .select('sub_table, is_bye').eq('level', level).eq('game', 6)
-  if (!ta6 || ta6.length === 0) {
-    return NextResponse.json({ error: 'ยังไม่ได้จัดโต๊ะเกม 6' }, { status: 400 })
+  // เช็คว่ากรอกผลเกมสุดท้ายครบหมดหรือยัง
+  const { data: taLast } = await supabase.from('table_assignments')
+    .select('sub_table, is_bye').eq('level', level).eq('game', lastGame)
+  if (!taLast || taLast.length === 0) {
+    return NextResponse.json({ error: `ยังไม่ได้จัดโต๊ะเกม ${lastGame}` }, { status: 400 })
   }
-  const { data: scored6 } = await supabase.from('games')
-    .select('sub_table, rounds1, rounds2').eq('level', level).eq('game', 6)
+  const { data: scoredLast } = await supabase.from('games')
+    .select('sub_table, rounds1, rounds2').eq('level', level).eq('game', lastGame)
   const scoredMap: Record<string, { rounds1: number | null; rounds2: number | null }> = {}
-  ;(scored6 || []).forEach((r: { sub_table: string; rounds1: number | null; rounds2: number | null }) => {
+  ;(scoredLast || []).forEach((r: { sub_table: string; rounds1: number | null; rounds2: number | null }) => {
     scoredMap[r.sub_table] = r
   })
-  const missing = (ta6 || [])
+  const missing = (taLast || [])
     .filter((t: { sub_table: string; is_bye: boolean }) => !t.is_bye)
     .filter((t: { sub_table: string }) => {
       const s = scoredMap[t.sub_table]
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     })
     .map((t: { sub_table: string }) => t.sub_table)
   if (missing.length > 0) {
-    return NextResponse.json({ error: `กรอกผลเกม 6 ยังไม่ครบ (เหลือ: ${missing.join(', ')})` }, { status: 400 })
+    return NextResponse.json({ error: `กรอกผลเกม ${lastGame} ยังไม่ครบ (เหลือ: ${missing.join(', ')})` }, { status: 400 })
   }
 
   const { data: players } = await supabase.from('players').select('*').eq('level', level).order('number')

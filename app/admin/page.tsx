@@ -216,7 +216,7 @@ export default function AdminPage() {
 
   async function createFinals() {
     setLoading(true)
-    const res = await fetch('/api/finals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level }) })
+    const res = await fetch('/api/finals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ level, totalGames: gameCount }) })
     setLoading(false)
     if (res.ok) { showMsg('✅ สร้างคู่ชิงชนะเลิศสำเร็จ'); loadFinals() }
     else { const d = await res.json(); showMsg(`❌ ${d.error}`, 'err') }
