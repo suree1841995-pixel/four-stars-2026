@@ -68,24 +68,42 @@ export default function DisplayPage() {
     loadAll()
     // fallback polling ทุก 30 วินาที เผื่อ realtime ขาด
     const pollId = setInterval(loadAll, 30000)
-    const ch = supabase.channel(`fs-display-${level}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `level=eq.${level}` }, loadAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_assignments', filter: `level=eq.${level}` }, loadAll)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'finals', filter: `level=eq.${level}` }, loadAll)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'broadcast' }, (payload) => {
-        const { type, level: bLevel, payload: bp } = payload.new as { type: string; level: string; payload: { message?: string } }
-        if (bLevel && bLevel !== level) return
-        if (type === 'current_game' || type === 'finals_created') loadAll()
-        if (type === 'announcement' && bp?.message) {
-          setAnnouncement(bp.message)
-          setTimeout(() => setAnnouncement(null), 30000)
-        }
-      })
-      .subscribe(status => {
-        if (status === 'SUBSCRIBED') setRealtimeOk(true)
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setRealtimeOk(false)
-      })
-    return () => { clearInterval(pollId); supabase.removeChannel(ch); if (realtimeTimer.current) clearTimeout(realtimeTimer.current) }
+
+    let ch = supabase.channel(`fs-display-${level}`)
+    let reconnectId: ReturnType<typeof setTimeout> | null = null
+
+    function subscribe() {
+      ch = supabase.channel(`fs-display-${level}-${Date.now()}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'games', filter: `level=eq.${level}` }, loadAll)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'table_assignments', filter: `level=eq.${level}` }, loadAll)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'finals', filter: `level=eq.${level}` }, loadAll)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'broadcast' }, (payload) => {
+          const { type, level: bLevel, payload: bp } = payload.new as { type: string; level: string; payload: { message?: string } }
+          if (bLevel && bLevel !== level) return
+          if (type === 'current_game' || type === 'finals_created') loadAll()
+          if (type === 'announcement' && bp?.message) {
+            setAnnouncement(bp.message)
+            setTimeout(() => setAnnouncement(null), 30000)
+          }
+        })
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') { setRealtimeOk(true); loadAll() }
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setRealtimeOk(false)
+            supabase.removeChannel(ch)
+            // auto-reconnect หลัง 5 วินาที
+            reconnectId = setTimeout(subscribe, 5000)
+          }
+        })
+    }
+
+    subscribe()
+    return () => {
+      clearInterval(pollId)
+      if (reconnectId) clearTimeout(reconnectId)
+      supabase.removeChannel(ch)
+      if (realtimeTimer.current) clearTimeout(realtimeTimer.current)
+    }
   }, [level, loadAll])
 
   const standings = computeStandings(players, gameRows)
