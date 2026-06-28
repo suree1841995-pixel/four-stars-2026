@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&family=Nunito:wght@700;800;900&display=swap');
+
+:root {
+  --purple-dark: #6d28d9;
+  --purple-mid: #a855f7;
+  --purple-light: #f3e8ff;
+  --purple-border: #d8b4fe;
+  --bg: #faf5ff;
+  --green: #059669;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: #1e293b;
+}
+
+.font-display {
+  font-family: 'Nunito', sans-serif;
+}

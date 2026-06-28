@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กระดานคะแนน Four Stars - Math Week 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold-dark: #6d28d9; --gold-mid: #a855f7; --gold-light: #f3e8ff;
+            --bg: #faf5ff; --white: #ffffff; --text: #1e293b; --muted: #64748b;
+            --green: #007d43; --silver: #94a3b8; --bronze: #9333ea;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+
+        .header { background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-mid) 100%); border-radius: 24px; padding: 28px 30px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 30px rgba(146,64,14,0.3); }
+        .header h1 { font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 900; color: var(--white); }
+        .header .badge { display: inline-block; background: var(--green); color: var(--white); font-size: 13px; font-weight: 800; padding: 3px 14px; border-radius: 20px; margin-top: 8px; }
+
+        .control-bar { background: var(--white); border-radius: 16px; padding: 14px 20px; margin-bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; border: 2px solid #d8b4fe; }
+        .control-bar select { padding: 9px 18px; border-radius: 10px; border: 2px solid var(--gold-mid); background: var(--white); color: var(--gold-dark); font-size: 16px; font-weight: 700; font-family: 'Sarabun', sans-serif; cursor: pointer; }
+
+        .view-switch { display: flex; background: #faf5ff; border-radius: 10px; padding: 4px; }
+        .view-switch button { padding: 9px 16px; border: none; background: transparent; border-radius: 8px; font-weight: 800; font-size: 13px; color: var(--muted); cursor: pointer; font-family: 'Sarabun', sans-serif; }
+        .view-switch button.active { background: var(--gold-mid); color: var(--white); }
+
+        .panel { background: var(--white); border-radius: 20px; padding: 0; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #d8b4fe; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { background: var(--gold-dark); color: var(--white); padding: 12px 8px; font-size: 13px; font-weight: 700; text-align: center; }
+        tbody td { padding: 10px 8px; text-align: center; font-size: 14px; font-weight: 600; border-bottom: 1px solid #f3e8ff; }
+        tbody tr.rank-1 td { background: linear-gradient(90deg,#faf5ff,#fae8ff); }
+        tbody tr.rank-2 td { background: #f8fafc; }
+        tbody tr.rank-3 td { background: #fdf4ff; }
+        .name-cell { text-align: left !important; padding-left: 16px !important; }
+        .rank-badge { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; font-size: 13px; font-weight: 800; background: #e2e8f0; color: #475569; }
+        .badge-1 { background: linear-gradient(135deg,#f59e0b,#fbbf24); color: #fff; }
+        .badge-2 { background: linear-gradient(135deg,#94a3b8,#b0bec5); color: #fff; }
+        .badge-3 { background: linear-gradient(135deg,#9333ea,#a855f7); color: #fff; }
+
+        .table-card { background: var(--white); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; border: 1px solid #d8b4fe; display: flex; align-items: center; gap: 16px; }
+        .table-num-badge { background: var(--gold-mid); color: white; font-weight: 900; padding: 8px 14px; border-radius: 10px; font-size: 14px; min-width: 70px; text-align: center; }
+        .table-pair-info { flex: 1; font-size: 14px; }
+        .table-note { font-size: 12px; color: var(--bronze); font-style: italic; margin-top: 2px; }
+
+        #footerStatus { text-align: center; margin-top: 16px; padding: 10px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; background: var(--white); color: var(--muted); border: 1px solid #d8b4fe; }
+        .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #22c55e; margin-right: 5px; animation: pulse-dot 1.4s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .section-title { font-size: 16px; font-weight: 800; color: var(--gold-dark); margin: 18px 0 10px; padding-left: 4px; }
+
+        .podium-card { display: flex; align-items: center; gap: 16px; background: var(--white); border-radius: 16px; padding: 18px 22px; margin-bottom: 12px; border: 2px solid #d8b4fe; }
+        .podium-card.gold { background: linear-gradient(135deg,#faf5ff,#fae8ff); border-color: #f59e0b; }
+        .podium-card.silver { background: #f8fafc; border-color: #94a3b8; }
+        .podium-card.bronze { background: #fdf4ff; border-color: #a855f7; }
+        .podium-medal { font-size: 36px; min-width: 50px; text-align: center; }
+        .podium-info { flex: 1; }
+        .podium-rank-label { font-size: 12px; font-weight: 800; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+        .podium-name { font-size: 18px; font-weight: 800; color: var(--text); margin-top: 2px; }
+        .podium-id { font-size: 13px; color: var(--muted); }
+        .participant-list { background: var(--white); border-radius: 16px; padding: 16px 20px; border: 1px solid #d8b4fe; }
+        .participant-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3e8ff; font-size: 14px; }
+        .participant-row:last-child { border-bottom: none; }
+        .awards-meta { font-size: 13px; color: var(--muted); margin: 10px 0 18px; padding: 10px 14px; background: #f8fafc; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>⭐ กระดานคะแนน Four Stars</h1>
+    <span class="badge">Math Week 2026 • โรงเรียนพูลเจริญวิทยาคม</span>
+</div>
+
+<div class="control-bar">
+    <select id="levelSelector" onchange="changeLevel()">
+        <option value="มต้น">มัธยมศึกษาตอนต้น</option>
+        <option value="มปลาย">มัธยมศึกษาตอนปลาย</option>
+    </select>
+    <div class="view-switch">
+        <button type="button" id="btnViewStandings" class="active" onclick="setView('standings')">ตารางอันดับ</button>
+        <button type="button" id="btnViewTables" onclick="setView('tables')">การจับคู่ปัจจุบัน</button>
+        <button type="button" id="btnViewPlayoff" onclick="setView('playoff')">รอบชิงชนะเลิศ</button>
+        <button type="button" id="btnViewAwards" onclick="setView('awards')">🏆 สรุปผลรางวัล</button>
+    </div>
+</div>
+
+<div id="standingsPanel" class="panel">
+    <table>
+        <thead>
+            <tr><th style="width:8%;">อันดับ</th><th style="width:12%;">รหัส</th><th>ชื่อ-สกุล</th><th style="width:12%;">W-T-L</th><th style="width:14%;">แต้มสะสม</th><th style="width:14%;">ผลต่าง</th></tr>
+        </thead>
+        <tbody id="standingsBody">
+            <tr><td colspan="6" style="padding:30px; color:#94a3b8;">⏳ กำลังโหลด...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="tablesPanel" style="display:none;">
+    <div class="section-title">🪑 การจับคู่เกมล่าสุด</div>
+    <div id="tablesContainer"></div>
+</div>
+
+<div id="playoffPanel" style="display:none;">
+    <div class="section-title">🏁 รอบชิงชนะเลิศ (ชิงที่ 1-2 และชิงที่ 3-4)</div>
+    <div id="playoffContainer"></div>
+</div>
+
+<div id="awardsPanel" style="display:none;">
+    <div class="section-title">🏆 สรุปผลรางวัล</div>
+    <div id="awardsContainer"></div>
+</div>
+
+<div id="footerStatus"><span class="live-dot"></span>กำลังเชื่อมต่อ...</div>
+
+<script>
+    const FS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx1JxCc6DwBAbBLgfk18v8ylHpcpyM0qXZXbijsTZD3jlcbm3JXj0TJW71QS9xhPTwtYg/exec';
+    let currentLevel = 'มต้น';
+    let currentView = 'standings';
+
+    function changeLevel() {
+        currentLevel = document.getElementById('levelSelector').value;
+        fetchData();
+    }
+
+    function setView(view) {
+        currentView = view;
+        document.getElementById('btnViewStandings').classList.toggle('active', view === 'standings');
+        document.getElementById('btnViewTables').classList.toggle('active', view === 'tables');
+        document.getElementById('btnViewPlayoff').classList.toggle('active', view === 'playoff');
+        document.getElementById('btnViewAwards').classList.toggle('active', view === 'awards');
+        document.getElementById('standingsPanel').style.display = view === 'standings' ? 'block' : 'none';
+        document.getElementById('tablesPanel').style.display = view === 'tables' ? 'block' : 'none';
+        document.getElementById('playoffPanel').style.display = view === 'playoff' ? 'block' : 'none';
+        document.getElementById('awardsPanel').style.display = view === 'awards' ? 'block' : 'none';
+    }
+
+    function fetchData() {
+        const statusDiv = document.getElementById('footerStatus');
+        statusDiv.innerHTML = '<span class="live-dot"></span>กำลังดึงข้อมูล...';
+
+        fetch(FS_WEB_APP_URL + '?action=fullState&level=' + encodeURIComponent(currentLevel))
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (!res || res.status !== 'success') { statusDiv.innerText = '❌ โหลดข้อมูลไม่สำเร็จ'; return; }
+                renderStandings(res.standings);
+                renderTables(res.currentTables, res.latestGame);
+                renderFinals(res.finals);
+                renderAwards(res.awards);
+                const now = new Date();
+                statusDiv.innerHTML = '<span class="live-dot"></span>อัปเดตล่าสุด: ' + now.toLocaleTimeString('th-TH') + ' น.';
+            })
+            .catch(function() { statusDiv.innerText = '❌ เชื่อมต่อไม่สำเร็จ'; });
+    }
+
+    function renderStandings(standings) {
+        const tbody = document.getElementById('standingsBody');
+        tbody.innerHTML = '';
+        if (!standings || standings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="padding:24px; color:#94a3b8;">ไม่พบข้อมูล</td></tr>';
+            return;
+        }
+        standings.forEach(function(s, i) {
+            const tr = document.createElement('tr');
+            tr.className = i < 3 ? 'rank-' + (i + 1) : '';
+            const badgeClass = i < 3 ? 'rank-badge badge-' + (i + 1) : 'rank-badge';
+            const medals = ['🥇','🥈','🥉'];
+            const rankContent = i < 3 ? '<span class="' + badgeClass + '">' + medals[i] + '</span>' : '<span class="rank-badge">' + s.rank + '</span>';
+            tr.innerHTML =
+                '<td>' + rankContent + '</td>' +
+                '<td>' + s.id + '</td>' +
+                '<td class="name-cell">' + s.name + '</td>' +
+                '<td>' + s.w + '-' + s.t + '-' + s.l + '</td>' +
+                '<td><strong>' + s.points + '</strong></td>' +
+                '<td>' + (s.diffSum > 0 ? '+' : '') + s.diffSum + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderTables(tables, latestGame) {
+        const container = document.getElementById('tablesContainer');
+        if (!tables || tables.length === 0) {
+            container.innerHTML = '<p style="color:#94a3b8; padding:20px;">ยังไม่มีการจัดโต๊ะ</p>';
+            return;
+        }
+        let html = '<p style="margin-bottom:10px; color:#6d28d9; font-weight:700;">เกมที่ ' + latestGame + '</p>';
+        tables.forEach(function(t) {
+            let bodyHtml;
+            if (t.bye) {
+                const byeLabel = t.bye.name ? (t.bye.name + ' (' + t.bye.id + ')') : t.bye.id;
+                bodyHtml = '🎁 ' + byeLabel + ' ได้ bye (ไม่มีคู่แข่งในเกมนี้)';
+            } else if (t.rightBye) {
+                const leftStr = t.left ? (t.left.nameA || '-') + ' (' + t.left.idA + ') <strong>VS</strong> ' + (t.left.nameB || '-') + ' (' + t.left.idB + ')' : '-';
+                const byeLabel = t.rightBye.name ? (t.rightBye.name + ' (' + t.rightBye.id + ')') : t.rightBye.id;
+                bodyHtml = '<strong>' + t.table + 'A:</strong> ' + leftStr + '&nbsp;&nbsp;|&nbsp;&nbsp; <strong>' + t.table + 'B:</strong> 🎁 ' + byeLabel + ' ได้ bye';
+            } else {
+                const leftStr = t.left ? (t.left.nameA || '-') + ' (' + t.left.idA + ') <strong>VS</strong> ' + (t.left.nameB || '-') + ' (' + t.left.idB + ')' : '';
+                const rightStr = t.right ? (t.right.nameA || '-') + ' (' + t.right.idA + ') <strong>VS</strong> ' + (t.right.nameB || '-') + ' (' + t.right.idB + ')' : '';
+                bodyHtml = (leftStr ? '<strong>' + t.table + 'A:</strong> ' + leftStr : '') + (rightStr ? '&nbsp;&nbsp;|&nbsp;&nbsp; <strong>' + t.table + 'B:</strong> ' + rightStr : '');
+            }
+            html += '' +
+                '<div class="table-card">' +
+                    '<div class="table-num-badge">โต๊ะ ' + t.table + '</div>' +
+                    '<div class="table-pair-info">' +
+                        bodyHtml +
+                        (t.note ? '<div class="table-note">' + t.note + '</div>' : '') +
+                    '</div>' +
+                '</div>';
+        });
+        container.innerHTML = html;
+    }
+
+    function renderFinals(finals) {
+        const container = document.getElementById('playoffContainer');
+        if (!finals || finals.length === 0) {
+            container.innerHTML = '<p style="color:#94a3b8; padding:20px;">ยังไม่มีข้อมูลรอบชิงชนะเลิศ</p>';
+            return;
+        }
+        let html = '';
+        finals.forEach(function(p) {
+            html += '' +
+                '<div class="table-card">' +
+                    '<div class="table-num-badge">' + p.pairLabel + '</div>' +
+                    '<div class="table-pair-info">' +
+                        (p.nameA || '-') + ' (' + p.idA + ') (' + (p.roundsA !== '' ? p.roundsA : 0) + ') &nbsp;vs&nbsp; ' + (p.nameB || '-') + ' (' + p.idB + ') (' + (p.roundsB !== '' ? p.roundsB : 0) + ')' +
+                    '</div>' +
+                '</div>';
+        });
+        container.innerHTML = html;
+    }
+
+    function renderAwards(awards) {
+        const container = document.getElementById('awardsContainer');
+        if (!awards) {
+            container.innerHTML = '<p style="color:#94a3b8; padding:20px;">ยังไม่มีข้อมูล</p>';
+            return;
+        }
+
+        let html = '<div class="awards-meta">📋 จำนวนผู้เข้าแข่งขันจริง: ' + awards.totalPlayed + ' คน — อันดับ 1-3 ได้รับของรางวัล+เกียรติบัตร ส่วนที่เหลือทุกคนได้รับเกียรติบัตรเข้าร่วมการแข่งขัน</div>';
+
+        if (awards.tieNotes && awards.tieNotes.length > 0) {
+            awards.tieNotes.forEach(function (note) {
+                const isPlayoffNeeded = note.indexOf('ต้องให้กรรมการจัดเล่นเพิ่ม') !== -1;
+                html += '<div style="margin-bottom:14px; padding:12px 16px; border-radius:10px; font-size:13px; ' +
+                    (isPlayoffNeeded ? 'background:#fef2f2; border:1.5px solid #ef4444; color:#991b1b;' : 'background:#f3e8ff; border:1.5px solid #d8b4fe; color:#6d28d9;') +
+                    '">' + (isPlayoffNeeded ? '⚠️ ' : 'ℹ️ ') + note + '</div>';
+            });
+        }
+
+        if (awards.first) {
+            html += '' +
+                '<div class="podium-card gold">' +
+                    '<div class="podium-medal">🥇</div>' +
+                    '<div class="podium-info">' +
+                        '<div class="podium-rank-label">ชนะเลิศ (ที่ 1)</div>' +
+                        '<div class="podium-name">' + awards.first.name + '</div>' +
+                        '<div class="podium-id">รหัส ' + awards.first.id + '</div>' +
+                    '</div>' +
+                '</div>';
+        } else {
+            html += '<p style="color:#94a3b8; padding:8px 0;">⏳ ยังไม่มีผลชิงที่ 1-2</p>';
+        }
+
+        if (awards.second) {
+            html += '' +
+                '<div class="podium-card silver">' +
+                    '<div class="podium-medal">🥈</div>' +
+                    '<div class="podium-info">' +
+                        '<div class="podium-rank-label">รองชนะเลิศ (ที่ 2)</div>' +
+                        '<div class="podium-name">' + awards.second.name + '</div>' +
+                        '<div class="podium-id">รหัส ' + awards.second.id + '</div>' +
+                    '</div>' +
+                '</div>';
+        }
+
+        if (awards.third) {
+            html += '' +
+                '<div class="podium-card bronze">' +
+                    '<div class="podium-medal">🥉</div>' +
+                    '<div class="podium-info">' +
+                        '<div class="podium-rank-label">อันดับ 3</div>' +
+                        '<div class="podium-name">' + awards.third.name + '</div>' +
+                        '<div class="podium-id">รหัส ' + awards.third.id + '</div>' +
+                    '</div>' +
+                '</div>';
+        } else {
+            html += '<p style="color:#94a3b8; padding:8px 0;">⏳ ยังไม่มีผลชิงที่ 3-4</p>';
+        }
+
+        if (awards.participants && awards.participants.length > 0) {
+            html += '<div class="section-title" style="margin-top:20px;">🎖️ เกียรติบัตรเข้าร่วมการแข่งขัน (ทุกคนที่ไม่ติดอันดับ 1-3)</div>';
+            html += '<div class="participant-list">';
+            awards.participants.forEach(function(p) {
+                html += '<div class="participant-row"><span>อันดับ ' + p.rank + ' — ' + p.name + '</span><span>รหัส ' + p.id + '</span></div>';
+            });
+            html += '</div>';
+        }
+
+        container.innerHTML = html;
+    }
+
+    fetchData();
+    setInterval(fetchData, 5000);
+</script>
+</body>
+</html>

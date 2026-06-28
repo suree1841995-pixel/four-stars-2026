@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แผงแอดมิน Four Stars - Math Week 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold-dark: #6d28d9; --gold-mid: #a855f7; --gold-light: #f3e8ff;
+            --bg: #faf5ff; --white: #ffffff; --text: #1e293b; --muted: #64748b; --border: #e2e8f0;
+            --green: #007d43;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; }
+
+        .header { background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-mid) 100%); border-radius: 24px; padding: 24px 28px; text-align: center; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(146,64,14,0.25); }
+        .header h1 { font-family: 'Nunito', sans-serif; font-size: 24px; font-weight: 900; color: var(--white); }
+        .header .subtitle { font-size: 13px; font-weight: 700; color: #fae8ff; margin-top: 6px; }
+
+        .level-toggle { max-width: 700px; margin: 0 auto 20px; display: flex; background: var(--white); border-radius: 14px; padding: 6px; border: 2px solid #d8b4fe; box-shadow: 0 2px 10px rgba(146,64,14,0.08); }
+        .level-toggle button { flex: 1; padding: 12px; border: none; background: transparent; border-radius: 10px; font-family: 'Sarabun', sans-serif; font-weight: 800; font-size: 15px; color: var(--muted); cursor: pointer; }
+        .level-toggle button.active { background: var(--gold-mid); color: var(--white); }
+
+        .card { max-width: 700px; margin: 0 auto 24px; background: var(--white); border-radius: 20px; padding: 26px; box-shadow: 0 4px 24px rgba(0,0,0,0.05); border: 1px solid var(--border); }
+        .section-label { font-size: 15px; font-weight: 800; color: var(--gold-dark); margin-bottom: 12px; display: flex; align-items: center; gap: 7px; }
+
+        .game-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+        .game-buttons button { padding: 14px 8px; border-radius: 12px; border: 2px solid #d8b4fe; background: var(--gold-light); font-family: 'Sarabun', sans-serif; font-weight: 800; font-size: 13.5px; color: var(--gold-dark); cursor: pointer; position: relative; transition: opacity 0.15s; }
+        .game-buttons button.done { background: #d1fae5; border-color: var(--green); color: #065f46; }
+        .game-buttons button.koth { border-color: #7e22ce; }
+        .game-buttons button:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(40%); }
+        .game-buttons button .lock-icon { display: none; font-size: 10.5px; margin-top: 3px; line-height: 1.3; font-weight: 700; color: #b45309; }
+        .game-buttons button:disabled .lock-icon { display: block; }
+
+        .btn-action { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-mid) 100%); color: var(--white); border: none; border-radius: 12px; font-family: 'Sarabun', sans-serif; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 14px rgba(146,64,14,0.25); }
+        .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary { background: var(--white); color: var(--gold-dark); border: 2px solid var(--gold-mid); }
+
+        .table-list { margin-top: 16px; }
+        .table-row { display: flex; gap: 10px; padding: 10px 14px; background: #faf5ff; border-radius: 10px; margin-bottom: 8px; border: 1px solid #d8b4fe; font-size: 14px; align-items: center; }
+        .table-num { font-weight: 900; color: var(--gold-dark); min-width: 80px; }
+        .table-pairs { flex: 1; }
+        .table-note { font-size: 12px; color: #9333ea; font-style: italic; }
+
+        .status-box { margin-top: 14px; padding: 12px; border-radius: 10px; text-align: center; font-weight: 700; font-size: 14px; display: none; }
+        .status-success { background: #d1fae5; color: #065f46; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-warning { background: #f3e8ff; color: #6d28d9; }
+
+        .standings-mini { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+        .standings-mini th { background: var(--gold-dark); color: white; padding: 8px; }
+        .standings-mini td { padding: 8px; text-align: center; border-bottom: 1px solid var(--border); }
+
+        .podium-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 8px; border-radius: 10px; border: 1px solid #d8b4fe; }
+        .podium-row.gold { background: #fae8ff; }
+        .podium-row.silver { background: #f8fafc; }
+        .podium-row.bronze { background: #fdf4ff; }
+        .podium-row .medal { font-size: 22px; min-width: 32px; }
+        .podium-row .info { flex: 1; font-size: 14px; }
+        .participant-mini { font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f3e8ff; display: flex; justify-content: space-between; }
+        .awards-meta-small { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; }
+
+        .tip { background: #f8fafc; border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: var(--muted); line-height: 1.6; margin-bottom: 14px; border-left: 4px solid var(--gold-mid); }
+
+        .gibson-box { background: #fdf4ff; border: 1.5px solid #e9d5ff; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+        .gibson-box label { font-size: 13px; font-weight: 700; color: #7e22ce; display: block; margin-bottom: 6px; }
+        .gibson-box input { width: 100%; padding: 8px 10px; border: 1.5px solid #e9d5ff; border-radius: 8px; font-family: 'Sarabun', sans-serif; font-size: 14px; }
+        .gibson-box .hint { font-size: 11.5px; color: #7e22ce; margin-top: 4px; }
+
+        .tie-warning { background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-size: 13px; color: #991b1b; }
+        .lock-note { font-size: 12px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 12px; margin-top: 8px; display: none; }
+        .lock-note .lock-line { padding: 4px 0; border-bottom: 1px dashed #fde68a; }
+        .lock-note .lock-line:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>⭐ แผงแอดมิน Four Stars</h1>
+    <div class="subtitle">Math Week 2026 • โรงเรียนพูลเจริญวิทยาคม</div>
+</div>
+
+<div class="level-toggle">
+    <button type="button" id="btnLevelJ" class="active" onclick="switchLevel('มต้น')">มัธยมศึกษาตอนต้น</button>
+    <button type="button" id="btnLevelS" onclick="switchLevel('มปลาย')">มัธยมศึกษาตอนปลาย</button>
+</div>
+
+<div class="card">
+    <div class="section-label">🎮 รอบคัดเลือก (6 เกม) — เลือกเกมที่จะจัดโต๊ะ</div>
+    <div class="tip">
+        เกม 1: สุ่มจับโต๊ะ &nbsp;|&nbsp; เกม 2,4: ไขว้ชนะ-แพ้ในโต๊ะเดิม &nbsp;|&nbsp;
+        เกม 3,5: จัดโต๊ะใหม่ตามแต้มสะสม (Swiss) &nbsp;|&nbsp; เกม 6: King of the Hill (จัดภาพรวมทั้งสายใหม่)
+        <br>📌 ใน 1 เกมแข่ง 3 รอบย่อย กรอกผลที่หน้า scoring เป็น "จำนวนรอบย่อยที่ชนะ" ของแต่ละฝั่ง (0-3)
+        <br>🔒 ปุ่มเกมถัดไปจะเปิดให้กดได้ ก็ต่อเมื่อกรอกผลเกมก่อนหน้าครบทุกโต๊ะแล้วเท่านั้น (โต๊ะที่ได้ bye นับว่าครบอัตโนมัติ)
+    </div>
+    <div class="game-buttons">
+        <button type="button" id="btnGame1" onclick="generateTables(1)">เกม 1<br>Random</button>
+        <button type="button" id="btnGame2" onclick="generateTables(2)">เกม 2<br>ไขว้โต๊ะเดิม<div class="lock-icon" id="lockIcon2">🔒 รอเกม 1</div></button>
+        <button type="button" id="btnGame3" onclick="generateTables(3)">เกม 3<br>Swiss ใหม่<div class="lock-icon" id="lockIcon3">🔒 รอเกม 2</div></button>
+        <button type="button" id="btnGame4" onclick="generateTables(4)">เกม 4<br>ไขว้โต๊ะเดิม<div class="lock-icon" id="lockIcon4">🔒 รอเกม 3</div></button>
+        <button type="button" id="btnGame5" onclick="generateTables(5)">เกม 5<br>Swiss ใหม่<div class="lock-icon" id="lockIcon5">🔒 รอเกม 4</div></button>
+        <button type="button" id="btnGame6" class="koth" onclick="generateTables(6)">เกม 6<br>King of Hill<div class="lock-icon" id="lockIcon6">🔒 รอเกม 5</div></button>
+    </div>
+    <div id="lockNote" class="lock-note"></div>
+
+    <div class="gibson-box">
+        <label>🎯 Gibsonize (เกม 6 เท่านั้น) — รหัสนักกีฬาที่คะแนนลอยลำเข้ารอบชิงแน่นอนแล้ว ไม่ต้องแข่งเกม 6:</label>
+        <button type="button" class="btn-action btn-secondary" style="margin-top:0; margin-bottom:10px;" onclick="suggestGibsonize()">🔍 ให้ระบบแนะนำอัตโนมัติ (ต้องตรวจทานก่อนใช้)</button>
+        <div id="gibsonSuggestBox"></div>
+        <input type="text" id="gibsonInput" placeholder="เช่น 4,7 (คั่นด้วยจุลภาค ถ้าไม่มีใครลอยลำ เว้นว่างได้)">
+        <div class="hint">เว้นว่างไว้ได้ถ้าไม่มีใครคะแนนลอยลำ ระบบจะจัดโต๊ะเกม 6 ตามปกติทุกคน — คำแนะนำจากระบบเป็นแค่ข้อเสนอ กรุณาตรวจทานให้แน่ใจก่อนกดใช้</div>
+    </div>
+
+    <div id="tableStatus" class="status-box"></div>
+    <div id="tableList" class="table-list"></div>
+</div>
+
+<div class="card">
+    <div class="section-label">🏁 รอบชิงชนะเลิศ (หลังจบ 6 เกมรอบคัดเลือก)</div>
+    <div class="tip">
+        กดปุ่มนี้เมื่อกรอกผลครบทุกเกมแล้ว ระบบจะดึง 4 อันดับแรกมาจับคู่ให้อัตโนมัติ:
+        <strong>อันดับ 1 vs อันดับ 2 (ชิงที่ 1-2)</strong> และ <strong>อันดับ 3 vs อันดับ 4 (ชิงที่ 3-4)</strong>
+    </div>
+    <button type="button" class="btn-action" onclick="checkTieBeforeFinals()">🔍 เช็คก่อนจัดคู่ (ดูว่าอันดับ 4-5 เสมอกันหรือไม่)</button>
+    <button type="button" class="btn-action btn-secondary" id="btnGenerateFinals" onclick="generateFinals()">🎯 สร้างคู่ชิงชนะเลิศ (1v2, 3v4)</button>
+    <div id="tieCheckBox"></div>
+    <div id="playoffStatus" class="status-box"></div>
+    <div id="playoffList" class="table-list"></div>
+</div>
+
+<div class="card">
+    <div class="section-label">📊 ตารางอันดับปัจจุบัน</div>
+    <button type="button" class="btn-action btn-secondary" onclick="loadStandings()">🔄 โหลด/รีเฟรชตารางอันดับ</button>
+    <div id="standingsBox"></div>
+</div>
+
+<div class="card">
+    <div class="section-label">🏅 สรุปผลรางวัล (ที่ 1-3 ได้รางวัล, ที่เหลือทุกคนได้เกียรติบัตรเข้าร่วม)</div>
+    <button type="button" class="btn-action btn-secondary" onclick="loadAwards()">🔄 โหลด/รีเฟรชสรุปผลรางวัล</button>
+    <div id="awardsBox"></div>
+</div>
+
+<script>
+    let currentLevel = 'มต้น';
+    let unlockedFinalsCache = false;
+    let standingsLoaded = false; // true หลังกดโหลดตารางอันดับครั้งแรกอย่างน้อย 1 ครั้ง -> auto-refresh ถึงจะอัปเดตกล่องนี้ต่อ
+    let awardsLoaded = false;    // เหมือนกันสำหรับกล่องสรุปผลรางวัล
+
+    function switchLevel(level) {
+        currentLevel = level;
+        document.getElementById('btnLevelJ').classList.toggle('active', level === 'มต้น');
+        document.getElementById('btnLevelS').classList.toggle('active', level === 'มปลาย');
+        document.getElementById('tableList').innerHTML = '';
+        document.getElementById('standingsBox').innerHTML = '';
+        document.getElementById('awardsBox').innerHTML = '';
+        document.getElementById('lockNote').style.display = 'none';
+        standingsLoaded = false; // เปลี่ยนระดับชั้นแล้ว ข้อมูลเก่าเป็นของระดับเดิม ต้องกดโหลดใหม่เอง (ไม่ auto-refresh ทับให้งง)
+        awardsLoaded = false;
+        refreshGameLockState();
+    }
+
+    function showStatus(elId, msg, type) {
+        const box = document.getElementById(elId);
+        box.style.display = 'block';
+        box.className = 'status-box ' + (type === 'error' ? 'status-error' : type === 'warning' ? 'status-warning' : 'status-success');
+        box.innerText = msg;
+    }
+
+    /**
+     * อธิบายสาเหตุที่ปุ่มเกม res.games[idx] ถูกล็อก โดยดูจากเกมก่อนหน้า (res.games[idx-1])
+     * แยก 2 กรณีให้อ่านง่าย:
+     * - เกมก่อนหน้ายังไม่ถูกจัดโต๊ะเลย (missing = ["ยังไม่มีการจัดโต๊ะเกมนี้"]) -> บอกตรงๆว่ายังไม่จัดโต๊ะ
+     * - เกมก่อนหน้าจัดโต๊ะแล้วแต่กรอกผลไม่ครบ -> ระบุรายชื่อโต๊ะย่อยที่ยังขาดให้ชัดเจน
+     * คืนค่า { short, full } ใช้ short แสดงในปุ่ม (สั้น) และ full แสดงใน tooltip/lockNote (ละเอียดกว่า)
+     */
+    function describeLockReason(games, idx) {
+        const prevGame = games[idx - 1];
+        const prevNum = games[idx].game - 1;
+        if (!prevGame) return { short: '', full: 'เกม ' + prevNum + ' ยังไม่มีข้อมูล' };
+
+        const notAssignedYet = prevGame.missing.length === 1 && prevGame.missing[0] === 'ยังไม่มีการจัดโต๊ะเกมนี้';
+        if (notAssignedYet) {
+            return {
+                short: 'ยังไม่จัดโต๊ะเกม ' + prevNum,
+                full: 'เกม ' + prevNum + ' ยังไม่ถูกจัดโต๊ะเลย ต้องกดจัดโต๊ะ+กรอกผลเกม ' + prevNum + ' ให้ครบก่อน'
+            };
+        }
+        return {
+            short: 'เหลือโต๊ะ: ' + prevGame.missing.join(', '),
+            full: 'เกม ' + prevNum + ' กรอกผลยังไม่ครบ — เหลือโต๊ะที่ยังไม่กรอกผล: ' + prevGame.missing.join(', ')
+        };
+    }
+
+    /**
+     * เรียกตอนโหลดหน้าครั้งแรก / เปลี่ยนระดับชั้น / หลังจัดโต๊ะเกมหนึ่งสำเร็จ
+     * ดึงสถานะปลดล็อกของปุ่มเกม 1-6 ทั้งหมดในคราวเดียว (fsGetUnlockedGames) แล้ว
+     * set disabled/done ของปุ่มแต่ละเกมให้ตรงกับสถานะจริงบนชีท ไม่ใช่แค่จำสถานะไว้ในตัวแปร JS
+     * (กันกรณีเปิดหน้าใหม่ หรือมีคนอื่นกดจัดโต๊ะจากเครื่องอื่นไปแล้ว ปุ่มจะแสดงสถานะที่ถูกต้องเสมอ)
+     *
+     * หมายเหตุสำคัญ: res.games[i].missing คือ "โต๊ะที่เกมนั้นเองยังกรอกไม่ครบ" (เกณฑ์ใช้ปลดล็อกเกมถัดไป)
+     * ไม่ใช่สาเหตุที่เกมนั้นถูกล็อก — สาเหตุที่เกม N ล็อก มาจาก "โต๊ะของเกม N-1 ที่ยังไม่กรอก"
+     * ดังนั้นตอนแสดงผลให้ปุ่มเกม N ต้องไปดู missing ของ "เกม N-1" (index ก่อนหน้าใน array) ไม่ใช่ของตัวเอง
+     */
+    function refreshGameLockState() {
+        google.script.run
+            .withSuccessHandler(function (res) {
+                res.games.forEach(function (g, idx) {
+                    const btn = document.getElementById('btnGame' + g.game);
+                    if (!btn) return;
+                    btn.disabled = !g.unlocked;
+                    btn.classList.toggle('done', g.done);
+
+                    const lockIcon = document.getElementById('lockIcon' + g.game);
+                    if (lockIcon) {
+                        if (!g.unlocked) {
+                            const reasonHtml = describeLockReason(res.games, idx);
+                            lockIcon.innerHTML = '🔒 รอเกม ' + (g.game - 1) + (reasonHtml.short ? '<br>' + reasonHtml.short : '');
+                            btn.title = 'เกม ' + g.game + ' ยังกดไม่ได้ — ' + reasonHtml.full;
+                        } else {
+                            lockIcon.innerHTML = '';
+                            btn.title = '';
+                        }
+                    }
+                });
+                unlockedFinalsCache = res.unlockedFinals;
+                document.getElementById('btnGenerateFinals').disabled = !res.unlockedFinals;
+
+                // แสดงรายการ "ทุกเกม" ที่ยังล็อกอยู่ พร้อมเหตุผล/โต๊ะที่ขาดของเกมก่อนหน้าแต่ละอัน (ไม่ใช่แค่เกมแรกที่ล็อก)
+                const lockNote = document.getElementById('lockNote');
+                const lockedGameIdx = res.games.map(function (g, i) { return g.unlocked ? -1 : i; }).filter(function (i) { return i !== -1; });
+                if (lockedGameIdx.length > 0) {
+                    lockNote.style.display = 'block';
+                    lockNote.innerHTML = lockedGameIdx.map(function (idx) {
+                        const g = res.games[idx];
+                        const reasonHtml = describeLockReason(res.games, idx);
+                        return '<div class="lock-line">🔒 เกม ' + g.game + ' ยังกดไม่ได้ — ' + reasonHtml.full + '</div>';
+                    }).join('');
+                } else {
+                    lockNote.style.display = 'none';
+                }
+
+                if (!res.unlockedFinals) {
+                    const lastGame = res.games[5]; // เกม 6 (index 5)
+                    document.getElementById('btnGenerateFinals').title = lastGame && lastGame.missing && lastGame.missing.length > 0
+                        ? 'ยังสร้างคู่ชิงไม่ได้ — เกม 6 เหลือโต๊ะที่ยังไม่กรอกผล: ' + lastGame.missing.join(', ')
+                        : 'ยังสร้างคู่ชิงไม่ได้ — กรอกผลรอบคัดเลือกให้ครบทั้ง 6 เกมก่อน';
+                } else {
+                    document.getElementById('btnGenerateFinals').title = '';
+                }
+            })
+            .withFailureHandler(function (err) {
+                // เงียบไว้ ไม่ต้องรบกวนถ้าดึงสถานะล็อกไม่สำเร็จ — ปุ่มจะเป็นค่าเริ่มต้น (กดได้) แต่ฝั่ง server ยังกันซ้ำด้วย throw error อยู่ดี
+                console.error('refreshGameLockState error', err);
+            })
+            .fsGetUnlockedGames(currentLevel);
+    }
+
+    function renderTables(tables) {
+        const list = document.getElementById('tableList');
+        list.innerHTML = '';
+        if (!tables || tables.length === 0) {
+            list.innerHTML = '<p style="color:#94a3b8; text-align:center; padding:10px;">ยังไม่มีการจัดโต๊ะ</p>';
+            return;
+        }
+        tables.forEach(t => {
+            const row = document.createElement('div');
+            row.className = 'table-row';
+            if (t.bye) {
+                const byeLabel = t.bye.name ? `${t.bye.name} (${t.bye.id})` : t.bye.id;
+                row.innerHTML = `<div class="table-num">โต๊ะ ${t.table}</div><div class="table-pairs">🎁 ${byeLabel} ได้ bye (ไม่มีคู่แข่งในเกมนี้)</div>`;
+            } else if (t.rightBye) {
+                const leftStr = t.left ? `${t.left.nameA || '-'} (${t.left.idA}) vs ${t.left.nameB || '-'} (${t.left.idB})` : '-';
+                const byeLabel = t.rightBye.name ? `${t.rightBye.name} (${t.rightBye.id})` : t.rightBye.id;
+                row.innerHTML = `
+                    <div class="table-num">โต๊ะ ${t.table}</div>
+                    <div class="table-pairs">
+                        <strong>${t.table}A:</strong> ${leftStr} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>${t.table}B:</strong> 🎁 ${byeLabel} ได้ bye
+                        ${t.note ? `<div class="table-note">${t.note}</div>` : ''}
+                    </div>`;
+            } else {
+                const leftStr = t.left ? `${t.left.nameA || '-'} (${t.left.idA}) vs ${t.left.nameB || '-'} (${t.left.idB})` : '-';
+                const rightStr = t.right ? `${t.right.nameA || '-'} (${t.right.idA}) vs ${t.right.nameB || '-'} (${t.right.idB})` : '';
+                row.innerHTML = `
+                    <div class="table-num">โต๊ะ ${t.table}</div>
+                    <div class="table-pairs">
+                        <strong>${t.table}A:</strong> ${leftStr} ${rightStr ? `&nbsp;&nbsp;|&nbsp;&nbsp; <strong>${t.table}B:</strong> ${rightStr}` : ''}
+                        ${t.note ? `<div class="table-note">${t.note}</div>` : ''}
+                    </div>`;
+            }
+            list.appendChild(row);
+        });
+    }
+
+    function generateTables(gameNum) {
+        const statusEl = 'tableStatus';
+        showStatus(statusEl, '⏳ กำลังจัดโต๊ะเกม ' + gameNum + ' ...', 'success');
+
+        let fnName, args;
+        if (gameNum === 1) { fnName = 'fsGenerateGame1Tables'; args = [currentLevel]; }
+        else if (gameNum === 2) { fnName = 'fsGenerateCrossoverTables'; args = [currentLevel, 1]; }
+        else if (gameNum === 3) { fnName = 'fsGenerateSwissTables'; args = [currentLevel, 3]; }
+        else if (gameNum === 4) { fnName = 'fsGenerateCrossoverTables'; args = [currentLevel, 3]; }
+        else if (gameNum === 5) { fnName = 'fsGenerateSwissTables'; args = [currentLevel, 5]; }
+        else if (gameNum === 6) {
+            const gibsonRaw = document.getElementById('gibsonInput').value.trim();
+            const gibsonIds = gibsonRaw ? gibsonRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+            fnName = 'fsGenerateKingOfHillTables'; args = [currentLevel, gibsonIds];
+        }
+
+        google.script.run
+            .withSuccessHandler(function (tables) {
+                renderTables(tables);
+                google.script.run
+                    .withSuccessHandler(function () {
+                        showStatus(statusEl, '✅ จัดโต๊ะเกม ' + gameNum + ' เรียบร้อย บันทึกแล้ว', 'success');
+                        refreshGameLockState(); // จัดโต๊ะเกมนี้เสร็จแล้ว -> รีเช็คว่าปลดล็อกเกมถัดไปได้หรือยัง (ยังไม่ได้ จนกว่าจะกรอกผลครบ)
+                    })
+                    .withFailureHandler(function (err) {
+                        showStatus(statusEl, '⚠️ จัดโต๊ะสำเร็จแต่บันทึกไม่สำเร็จ: ' + err.message, 'error');
+                    })
+                    .fsSaveTableAssignments(currentLevel, gameNum, tables);
+            })
+            .withFailureHandler(function (err) {
+                showStatus(statusEl, '❌ เกิดข้อผิดพลาด: ' + err.message, 'error');
+                refreshGameLockState(); // เผื่อปุ่มยัง enable ผิดอยู่ (เช่น โดน throw จาก server) ให้ดึงสถานะจริงกลับมาเช็คซ้ำ
+            })
+            [fnName].apply(null, args);
+    }
+
+    let lastGibsonizeSuggestion = [];
+
+    function suggestGibsonize() {
+        const box = document.getElementById('gibsonSuggestBox');
+        box.innerHTML = '<p style="color:#94a3b8; font-size:13px; padding:6px 0;">⏳ กำลังคำนวณ...</p>';
+
+        google.script.run
+            .withSuccessHandler(function (res) {
+                if (!res.hasEnoughPlayers) {
+                    box.innerHTML = '<p style="color:#94a3b8; font-size:13px; padding:6px 0;">' + (res.note || 'ผู้เล่นไม่ครบ 5 คน ไม่สามารถคำนวณได้') + '</p>';
+                    return;
+                }
+                if (!res.suggested || res.suggested.length === 0) {
+                    box.innerHTML = '<div style="font-size:13px; color:#7e22ce; padding:8px 0;">✅ ยังไม่มีใครคะแนนลอยลำชัดเจน (อันดับ 5 ยังมีโอกาสไล่ทันอันดับ 4 อยู่ — สูงสุดที่อันดับ 5 ทำได้ ' + res.maxPossibleForFifth + ' แต้ม) ระบบจะจัดโต๊ะเกม 6 ตามปกติทุกคน</div>';
+                    return;
+                }
+                lastGibsonizeSuggestion = res.suggested.map(function (s) { return s.id; });
+                let html = '<div style="font-size:13px; color:#7e22ce; font-weight:700; padding:8px 0 4px;">💡 ระบบแนะนำว่าคนเหล่านี้คะแนนลอยลำแล้ว (กรุณาตรวจทานก่อนใช้):</div>';
+                res.suggested.forEach(function (s) {
+                    html += '<div style="font-size:12.5px; color:#475569; padding:4px 0; border-bottom:1px dashed #e9d5ff;">อันดับ ' + s.rank + ' — ' + s.name + ' (รหัส ' + s.id + ', ' + s.points + ' แต้ม)<br><span style="color:#9333ea;">' + s.reason + '</span></div>';
+                });
+                html += '<button type="button" class="btn-action btn-secondary" style="margin-top:10px; font-size:13px; padding:10px;" onclick="applyGibsonizeSuggestion()">✅ ยืนยันใช้คำแนะนำนี้ (เติมช่องด้านล่างให้)</button>';
+                box.innerHTML = html;
+            })
+            .withFailureHandler(function (err) {
+                box.innerHTML = '<p style="color:#dc2626; font-size:13px;">❌ ' + err.message + '</p>';
+            })
+            .fsSuggestGibsonize(currentLevel);
+    }
+
+    function applyGibsonizeSuggestion() {
+        document.getElementById('gibsonInput').value = lastGibsonizeSuggestion.join(',');
+    }
+
+    function checkTieBeforeFinals() {
+        showStatus('tieCheckBox', '⏳ กำลังเช็ค...', 'success');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                const box = document.getElementById('tieCheckBox');
+                if (!res.needsPlayoff) {
+                    box.innerHTML = '<div class="status-box status-success" style="display:block;">✅ ไม่มีปัญหาเสมอกันที่ขอบเขตอันดับ 4 — จัดคู่ชิงได้เลย ' + (res.note ? '(' + res.note + ')' : '') + '</div>';
+                } else {
+                    box.innerHTML = '<div class="tie-warning">⚠️ ' + res.reason + '<br><strong>ต้องให้กรรมการจัดการแข่งเพิ่ม 1 เกม ระหว่างรหัส ' + res.candidateIds.join(' และ ') + ' ก่อนสร้างคู่ชิง</strong></div>';
+                }
+            })
+            .withFailureHandler(function (err) {
+                document.getElementById('tieCheckBox').innerHTML = '<div class="status-box status-error" style="display:block;">❌ ' + err.message + '</div>';
+            })
+            .fsCheckTieAtCutoff(currentLevel, 4);
+    }
+
+    function generateFinals() {
+        showStatus('playoffStatus', '⏳ กำลังสร้างคู่ชิงชนะเลิศ...', 'success');
+        google.script.run
+            .withSuccessHandler(function (res) {
+                showStatus('playoffStatus', '✅ สร้างคู่ชิงชนะเลิศสำเร็จ', 'success');
+                const list = document.getElementById('playoffList');
+                list.innerHTML = res.pairs.map(function(p) {
+                    return '<div class="table-row"><div class="table-num">' + p.pairLabel + '</div><div class="table-pairs">' + p.nameA + ' (' + p.idA + ') vs ' + p.nameB + ' (' + p.idB + ')</div></div>';
+                }).join('');
+            })
+            .withFailureHandler(function (err) {
+                showStatus('playoffStatus', '❌ เกิดข้อผิดพลาด: ' + err.message, 'error');
+            })
+            .fsGenerateFinals(currentLevel);
+    }
+
+    function loadStandings(silent) {
+        const box = document.getElementById('standingsBox');
+        if (!silent) box.innerHTML = '<p style="text-align:center; color:#94a3b8;">⏳ กำลังโหลด...</p>';
+        google.script.run
+            .withSuccessHandler(function (standings) {
+                standingsLoaded = true; // โหลดสำเร็จแล้ว -> เปิดสิทธิ์ให้ auto-refresh เข้ามาอัปเดตกล่องนี้ต่อได้
+                if (!standings || standings.length === 0) {
+                    box.innerHTML = '<p style="text-align:center; color:#94a3b8;">ยังไม่มีข้อมูล</p>';
+                    return;
+                }
+                let html = '<table class="standings-mini"><thead><tr><th>อันดับ</th><th>รหัส</th><th>ชื่อ</th><th>แต้ม</th><th>ผลต่าง</th></tr></thead><tbody>';
+                standings.forEach(function(s) {
+                    html += '<tr><td>' + s.rank + '</td><td>' + s.id + '</td><td style="text-align:left;">' + s.name + '</td><td>' + s.points + '</td><td>' + (s.diffSum > 0 ? '+' : '') + s.diffSum + '</td></tr>';
+                });
+                html += '</tbody></table>';
+                box.innerHTML = html;
+            })
+            .withFailureHandler(function (err) {
+                if (!silent) box.innerHTML = '<p style="text-align:center; color:#dc2626;">❌ ' + err.message + '</p>';
+                // โหมด silent (auto-refresh เบื้องหลัง) เจอ error ไม่ต้องไปทับของเดิมที่กำลังโชว์อยู่ ปล่อยให้ลองใหม่รอบถัดไป
+            })
+            .fsComputeStandings(currentLevel);
+    }
+
+    function loadAwards(silent) {
+        const box = document.getElementById('awardsBox');
+        if (!silent) box.innerHTML = '<p style="text-align:center; color:#94a3b8;">⏳ กำลังโหลด...</p>';
+        google.script.run
+            .withSuccessHandler(function (awards) {
+                awardsLoaded = true; // โหลดสำเร็จแล้ว -> เปิดสิทธิ์ให้ auto-refresh เข้ามาอัปเดตกล่องนี้ต่อได้
+                if (!awards) {
+                    box.innerHTML = '<p style="text-align:center; color:#94a3b8;">ยังไม่มีข้อมูล</p>';
+                    return;
+                }
+                let html = '<div class="awards-meta-small">📋 ผู้เข้าแข่งขันจริง ' + awards.totalPlayed + ' คน — ที่ 1-3 ได้รางวัล, ที่เหลือทุกคนได้เกียรติบัตรเข้าร่วม</div>';
+
+                if (awards.first) {
+                    html += '<div class="podium-row gold"><span class="medal">🥇</span><span class="info"><strong>ที่ 1:</strong> ' + awards.first.name + ' (รหัส ' + awards.first.id + ')</span></div>';
+                } else {
+                    html += '<p style="color:#94a3b8; padding:6px 0;">⏳ ยังไม่มีผลชิงที่ 1-2</p>';
+                }
+                if (awards.second) {
+                    html += '<div class="podium-row silver"><span class="medal">🥈</span><span class="info"><strong>ที่ 2:</strong> ' + awards.second.name + ' (รหัส ' + awards.second.id + ')</span></div>';
+                }
+                if (awards.third) {
+                    html += '<div class="podium-row bronze"><span class="medal">🥉</span><span class="info"><strong>ที่ 3:</strong> ' + awards.third.name + ' (รหัส ' + awards.third.id + ')</span></div>';
+                } else {
+                    html += '<p style="color:#94a3b8; padding:6px 0;">⏳ ยังไม่มีผลชิงที่ 3-4</p>';
+                }
+                if (awards.participants && awards.participants.length > 0) {
+                    html += '<div style="margin-top:14px; font-weight:700; color:var(--gold-dark); font-size:13px;">🎖️ เกียรติบัตรเข้าร่วมการแข่งขัน (ทุกคนที่ไม่ติดอันดับ 1-3):</div>';
+                    awards.participants.forEach(function(p) {
+                        html += '<div class="participant-mini"><span>อันดับ ' + p.rank + ' — ' + p.name + '</span><span>รหัส ' + p.id + '</span></div>';
+                    });
+                }
+                box.innerHTML = html;
+            })
+            .withFailureHandler(function (err) {
+                if (!silent) box.innerHTML = '<p style="text-align:center; color:#dc2626;">❌ ' + err.message + '</p>';
+            })
+            .fsGetAwardsSummary(currentLevel);
+    }
+
+
+    // ตอนเปิดหน้าครั้งแรก เช็คสถานะปลดล็อกปุ่มเกม 1-6 ทันที (ระดับชั้นเริ่มต้น มต้น)
+    refreshGameLockState();
+
+    // Auto-refresh: เช็คซ้ำเป็นระยะทุก 30 วินาที ว่ามีการกรอกผลเพิ่มจากหน้า scoring (คนละแท็บ/อุปกรณ์) หรือยัง
+    // เพราะหน้านี้ไม่รู้ตัวเองว่ามีคนกรอกผลที่อื่นเสร็จแล้ว จนกว่าจะกดอะไรซ้ำ — ปลอดภัยสำหรับ polling
+    // เนื่องจาก refreshGameLockState() แก้ไขแค่สถานะปุ่ม/กล่องล็อก ไม่ไปแตะค่าที่กรอกอยู่ในฟอร์ม (เช่น ช่อง Gibsonize)
+    // ส่วนตารางอันดับ/สรุปผลรางวัล จะรีเฟรชตามไปด้วยเฉพาะถ้าเคยกดโหลดมาแล้วอย่างน้อย 1 ครั้ง (standingsLoaded/awardsLoaded)
+    // เพื่อไม่ยิง server เปล่าๆถ้ายังไม่มีใครเปิดดูกล่องนั้น
+    setInterval(function () {
+        refreshGameLockState();
+        if (standingsLoaded) loadStandings(true);
+        if (awardsLoaded) loadAwards(true);
+    }, 30000);
+</script>
+</body>
+</html>

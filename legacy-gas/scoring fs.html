@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กรอกผล Four Stars - Math Week 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold-dark: #6d28d9; --gold-mid: #a855f7; --bg: #faf5ff; --white: #ffffff; --text: #1e293b; --muted: #64748b; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); padding: 16px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+
+        .header { background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-mid) 100%); width: 100%; max-width: 480px; border-radius: 16px; padding: 18px; text-align: center; color: var(--white); margin-bottom: 12px; }
+        .header h2 { font-size: 18px; font-weight: 800; }
+        .header p { font-size: 12px; color: #f3e8ff; margin-top: 4px; }
+
+        .level-toggle, .round-toggle { display: flex; width: 100%; max-width: 480px; background: var(--white); border-radius: 12px; padding: 5px; margin-bottom: 12px; border: 2px solid #d8b4fe; }
+        .level-toggle button, .round-toggle button { flex: 1; padding: 10px; border: none; background: transparent; border-radius: 8px; font-weight: 700; font-size: 13px; color: var(--muted); cursor: pointer; font-family: 'Sarabun', sans-serif; }
+        .level-toggle button.active, .round-toggle button.active { background: var(--gold-mid); color: var(--white); }
+
+        .container { width: 100%; max-width: 480px; background: var(--white); border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(146,64,14,0.08); border: 1px solid #d8b4fe; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 13px; font-weight: 700; color: var(--gold-dark); margin-bottom: 6px; }
+        select, .input-box { width: 100%; padding: 12px 14px; font-size: 15px; font-weight: 600; font-family: 'Sarabun', sans-serif; border: 2px solid #d8b4fe; border-radius: 10px; background: #faf5ff; outline: none; }
+
+        .vs-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; }
+        .vs-col { flex: 1; }
+        .vs-label { text-align: center; font-weight: 900; color: var(--gold-mid); font-size: 16px; }
+
+        .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-mid) 100%); color: var(--white); border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; font-family: 'Sarabun', sans-serif; }
+        .status-box { display: none; margin-top: 12px; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 13px; }
+
+        .divider { border-top: 1px dashed #d8b4fe; margin: 16px 0; }
+        .rounds-hint { font-size: 11.5px; color: var(--muted); margin-top: -8px; margin-bottom: 10px; text-align: center; }
+        .rounds-sum-warning { background: #fef2f2; color: #991b1b; padding: 8px; border-radius: 8px; font-size: 12.5px; text-align: center; margin-top: 6px; display: none; }
+        .name-hint { font-size: 12px; color: var(--gold-dark); font-weight: 700; margin-top: 3px; min-height: 16px; }
+        .lookup-hint { font-size: 12px; margin-top: 4px; min-height: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>✍️ กรอกผลแมตช์ (Four Stars)</h2>
+    <p>Math Week 2026 • โรงเรียนพูลเจริญวิทยาคม</p>
+</div>
+
+<div class="level-toggle">
+    <button type="button" id="btnLevelJ" class="active" onclick="setLevel('มต้น')">ม.ต้น</button>
+    <button type="button" id="btnLevelS" onclick="setLevel('มปลาย')">ม.ปลาย</button>
+</div>
+
+<div class="round-toggle">
+    <button type="button" id="btnModeQ" class="active" onclick="setMode('qualify')">รอบคัดเลือก</button>
+    <button type="button" id="btnModeP" onclick="setMode('final')">รอบชิงชนะเลิศ</button>
+</div>
+
+<div class="container">
+    <!-- รอบคัดเลือก -->
+    <div id="qualifySection">
+        <div class="form-group">
+            <label>🎮 เกมที่:</label>
+            <select id="gameNum" onchange="userTouchedGameDropdown = true; lookupSubTable();">
+                <option id="optGame1" value="1">เกม 1</option>
+                <option id="optGame2" value="2">เกม 2</option>
+                <option id="optGame3" value="3">เกม 3</option>
+                <option id="optGame4" value="4">เกม 4</option>
+                <option id="optGame5" value="5">เกม 5</option>
+                <option id="optGame6" value="6">เกม 6 (King of the Hill)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>🪑 โต๊ะย่อย:</label>
+            <input type="text" id="subTable" class="input-box" placeholder="เช่น 1A หรือ 1B" oninput="lookupSubTable()">
+            <div id="lookupHint" class="lookup-hint"></div>
+        </div>
+    </div>
+
+    <!-- รอบชิงชนะเลิศ -->
+    <div id="playoffSection" style="display:none;">
+        <div class="form-group">
+            <label>🏆 คู่ชิง:</label>
+            <select id="pairLabel" onchange="lookupSubTable()">
+                <option value="ชิงที่ 1-2">ชิงที่ 1-2 (อันดับ 1 vs อันดับ 2)</option>
+                <option value="ชิงที่ 3-4">ชิงที่ 3-4 (อันดับ 3 vs อันดับ 4)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="vs-row">
+        <div class="vs-col">
+            <label>🆔 รหัสนักกีฬาที่ 1:</label>
+            <input type="text" id="idA" class="input-box" placeholder="รหัสนักกีฬาที่ 1">
+            <div id="nameA" class="name-hint"></div>
+        </div>
+        <div class="vs-label">VS</div>
+        <div class="vs-col">
+            <label>🆔 รหัสนักกีฬาที่ 2:</label>
+            <input type="text" id="idB" class="input-box" placeholder="รหัสนักกีฬาที่ 2">
+            <div id="nameB" class="name-hint"></div>
+        </div>
+    </div>
+
+    <div class="vs-row">
+        <div class="vs-col">
+            <label>🎯 รอบย่อยที่ชนะ (1):</label>
+            <input type="number" id="roundsA" class="input-box" placeholder="0-3 (.5 ได้ถ้าเสมอ)" min="0" max="3" step="0.5" oninput="checkRoundsSum()">
+        </div>
+        <div class="vs-label"></div>
+        <div class="vs-col">
+            <label>🎯 รอบย่อยที่ชนะ (2):</label>
+            <input type="number" id="roundsB" class="input-box" placeholder="0-3 (.5 ได้ถ้าเสมอ)" min="0" max="3" step="0.5" oninput="checkRoundsSum()">
+        </div>
+    </div>
+    <div class="rounds-hint">💡 แข่ง 3 รอบย่อยต่อเกม รวมกันควรได้ 3 (เช่น ชนะ-ชนะ-แพ้ = 2-1) หากรอบย่อยใดเสมอ (กระดานเต็มไม่มีใครเรียงครบ 4) ให้นับฝั่งละ 0.5 แต้ม (เช่น ชนะ-เสมอ-เสมอ = 2.5-0.5 หรือเสมอทั้งเกม = 1.5-1.5) ยกเว้นกรณีชนะ/แพ้บาย ให้ใส่ 2-0</div>
+    <div id="roundsSumWarning" class="rounds-sum-warning">⚠️ จำนวนรอบย่อยรวมกันไม่เท่ากับ 3 — เช็คให้แน่ใจว่าตั้งใจกรอกแบบนี้ (เช่น กรณีบาย)</div>
+
+    <button type="button" class="btn-submit" onclick="submitResult()">🚀 บันทึกผลแมตช์</button>
+    <div id="statusBox" class="status-box"></div>
+</div>
+
+<script>
+    let currentLevel = 'มต้น';
+    let currentMode = 'qualify';
+
+    // แผนผังโต๊ะทั้งหมดของระดับชั้นปัจจุบัน (ทุกเกม 1-6 + คู่ชิง) โหลดมาเก็บไว้ในเครื่องครั้งเดียว
+    // จากนั้น auto-fill ทุกครั้งที่พิมพ์โต๊ะ/เลือกคู่ชิง จะ lookup จาก object นี้ตรงๆ ไม่ยิง server ซ้ำทุกตัวอักษร
+    // ทำให้รู้สึก "พิมพ์เสร็จชื่อขึ้นเลย" ได้เร็วที่สุดเท่าที่เป็นไปได้ภายใต้ข้อจำกัดของ Apps Script
+    let tableMap = null;
+    let tableMapLoading = false;
+
+    let userTouchedGameDropdown = false; // true เมื่อกดเปลี่ยนเกมเองแล้ว -> หยุด auto-select ทับ ป้องกัน polling ไปแย่งค่าคืนระหว่างกำลังกรอกอยู่
+
+    function setLevel(level) {
+        currentLevel = level;
+        document.getElementById('btnLevelJ').classList.toggle('active', level === 'มต้น');
+        document.getElementById('btnLevelS').classList.toggle('active', level === 'มปลาย');
+        userTouchedGameDropdown = false; // เปลี่ยนระดับชั้นแล้วถือว่าเริ่มใหม่ ให้ auto-select เกมล่าสุดของระดับใหม่ได้อีกครั้ง
+        clearAutoFill();
+        loadTableMap(true);
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btnModeQ').classList.toggle('active', mode === 'qualify');
+        document.getElementById('btnModeP').classList.toggle('active', mode === 'final');
+        document.getElementById('qualifySection').style.display = mode === 'qualify' ? 'block' : 'none';
+        document.getElementById('playoffSection').style.display = mode === 'final' ? 'block' : 'none';
+        clearAutoFill();
+        lookupSubTable();
+    }
+
+    function clearAutoFill() {
+        document.getElementById('nameA').innerText = '';
+        document.getElementById('nameB').innerText = '';
+        document.getElementById('lookupHint').innerText = '';
+        document.getElementById('lookupHint').style.color = '';
+    }
+
+    /**
+     * โหลดแผนผังโต๊ะทั้งหมดของระดับชั้นปัจจุบันมาเก็บไว้ในตัวแปร tableMap (ครั้งเดียว ไม่ใช่ทุกตัวอักษร)
+     * เรียกตอน: เปิดหน้าครั้งแรก / เปลี่ยนระดับชั้น / หลังบันทึกผลสำเร็จ / polling ทุก 30 วิ
+     * forceSelectGame = true เฉพาะตอนที่ควร auto-select ค่าดรอปดาวน์เกมให้ตรงกับเกมล่าสุด (โหลดครั้งแรก/เปลี่ยนระดับ)
+     */
+    function loadTableMap(forceSelectGame) {
+        tableMapLoading = true;
+        google.script.run
+            .withSuccessHandler(function (result) {
+                tableMap = result;
+                tableMapLoading = false;
+                updateGameBadge(forceSelectGame);
+                lookupSubTable(); // ข้อมูลใหม่มาแล้ว ลองเติมค่าปัจจุบันที่กรอกอยู่ใหม่ทันที
+            })
+            .withFailureHandler(function (err) {
+                tableMapLoading = false;
+                console.error('โหลดแผนผังโต๊ะไม่สำเร็จ', err);
+            })
+            .fsGetTableMapForLevel(currentLevel);
+    }
+
+    /**
+     * อัปเดต badge "🟢 เกมปัจจุบัน" บนตัวเลือกเกม ตามเกมล่าสุดที่จัดโต๊ะแล้วใน tableMap
+     * และ auto-select ค่าดรอปดาวน์ เฉพาะตอน forceSelect=true และยังไม่ได้ถูกเปลี่ยนมือเองในรอบนี้
+     * (ป้องกัน polling ไปแย่งค่าคืนระหว่างกำลังกรอกอยู่)
+     */
+    function updateGameBadge(forceSelect) {
+        for (let g = 1; g <= 6; g++) {
+            const opt = document.getElementById('optGame' + g);
+            if (opt) opt.innerText = 'เกม ' + g + (g === 6 ? ' (King of the Hill)' : '');
+        }
+        if (!tableMap || !tableMap.latestGame || tableMap.latestGame < 1 || tableMap.latestGame > 6) return;
+        const latest = tableMap.latestGame;
+        const opt = document.getElementById('optGame' + latest);
+        if (opt) opt.innerText = opt.innerText + ' 🟢 (ปัจจุบัน)';
+
+        if (forceSelect && !userTouchedGameDropdown && currentMode === 'qualify') {
+            document.getElementById('gameNum').value = String(latest);
+            lookupSubTable();
+        }
+    }
+
+    /**
+     * เติมรหัส+ชื่อนักกีฬาอัตโนมัติ แบบ client-side ล้วนๆ (lookup จาก tableMap ที่โหลดไว้แล้ว ไม่เรียก server)
+     * เรียกทุกครั้งที่พิมพ์โต๊ะย่อย (oninput) หรือเปลี่ยนเกม/คู่ชิง — เพราะ lookup ในเครื่องเร็วมาก ไม่ต้อง debounce
+     */
+    function lookupSubTable() {
+        const hint = document.getElementById('lookupHint');
+        clearAutoFill();
+
+        if (tableMapLoading) {
+            hint.innerText = '⏳ กำลังโหลดข้อมูลโต๊ะ...';
+            hint.style.color = '#64748b';
+            return;
+        }
+        if (!tableMap) return;
+
+        if (currentMode === 'qualify') {
+            const subTable = document.getElementById('subTable').value.trim().toUpperCase();
+            if (!subTable) return;
+            const gameNum = document.getElementById('gameNum').value;
+            const entry = (tableMap.games[gameNum] || {})[subTable];
+
+            if (!entry) {
+                hint.innerText = '⚠️ ไม่พบโต๊ะ ' + subTable + ' ในเกม ' + gameNum + ' (ตรวจสอบว่าจัดโต๊ะแล้วหรือยัง / พิมพ์ถูกไหม)';
+                hint.style.color = '#b45309';
+                return;
+            }
+
+            document.getElementById('idA').value = entry.idA;
+            document.getElementById('nameA').innerText = entry.nameA ? '👤 ' + entry.nameA : '';
+
+            if (entry.isBye) {
+                document.getElementById('idB').value = '';
+                document.getElementById('nameB').innerText = '';
+                hint.innerText = 'ℹ️ โต๊ะนี้เป็น bye — ไม่มีคู่แข่งจริง ระบบบันทึกผลชนะบาย (2-0) ให้อัตโนมัติแล้ว ไม่ต้องกรอกที่นี่';
+                hint.style.color = '#0369a1';
+            } else {
+                document.getElementById('idB').value = entry.idB;
+                document.getElementById('nameB').innerText = entry.nameB ? '👤 ' + entry.nameB : '';
+                hint.innerText = '✅ พบข้อมูลคู่แข่งแล้ว';
+                hint.style.color = '#16a34a';
+            }
+        } else {
+            const pairLabel = document.getElementById('pairLabel').value;
+            const entry = tableMap.finals[pairLabel];
+            if (!entry) {
+                hint.innerText = '⚠️ ยังไม่มีการจัดคู่ชิง "' + pairLabel + '" (ไปกดสร้างคู่ชิงที่หน้าแอดมินก่อน)';
+                hint.style.color = '#b45309';
+                return;
+            }
+            document.getElementById('idA').value = entry.idA;
+            document.getElementById('nameA').innerText = entry.nameA ? '👤 ' + entry.nameA : '';
+            document.getElementById('idB').value = entry.idB;
+            document.getElementById('nameB').innerText = entry.nameB ? '👤 ' + entry.nameB : '';
+            hint.innerText = '✅ พบข้อมูลคู่ชิงแล้ว';
+            hint.style.color = '#16a34a';
+        }
+    }
+
+    function checkRoundsSum() {
+        const a = Number(document.getElementById('roundsA').value || 0);
+        const b = Number(document.getElementById('roundsB').value || 0);
+        const warning = document.getElementById('roundsSumWarning');
+        warning.style.display = (a + b !== 3 && (a !== 0 || b !== 0)) ? 'block' : 'none';
+    }
+
+    function submitResult() {
+        const idA = document.getElementById('idA').value.trim();
+        const idB = document.getElementById('idB').value.trim();
+        const roundsA = document.getElementById('roundsA').value;
+        const roundsB = document.getElementById('roundsB').value;
+        const statusBox = document.getElementById('statusBox');
+
+        if (!idA || !idB) { alert('กรุณากรอกรหัสนักกีฬาทั้งสองฝั่ง'); return; }
+        if (roundsA === '' || roundsB === '') { alert('กรุณากรอกจำนวนรอบย่อยที่ชนะทั้งสองฝั่ง'); return; }
+
+        statusBox.style.display = 'block';
+        statusBox.style.backgroundColor = '#f1f5f9';
+        statusBox.style.color = '#475569';
+        statusBox.innerText = '⏳ กำลังบันทึกผล...';
+
+        if (currentMode === 'qualify') {
+            const gameNum = document.getElementById('gameNum').value;
+            const subTable = document.getElementById('subTable').value.trim();
+            if (!subTable) { alert('กรุณากรอกโต๊ะย่อย เช่น 1A หรือ 1B'); statusBox.style.display = 'none'; return; }
+
+            google.script.run
+                .withSuccessHandler(function () {
+                    const diff = Number(roundsA) - Number(roundsB);
+                    let resultText;
+                    if (diff > 0) resultText = 'นักกีฬาที่ 1 ชนะเกม (' + roundsA + '-' + roundsB + ')';
+                    else if (diff < 0) resultText = 'นักกีฬาที่ 2 ชนะเกม (' + roundsB + '-' + roundsA + ')';
+                    else resultText = 'เสมอเกม (' + roundsA + '-' + roundsB + ') — กระดานเต็มไม่มีใครเรียงครบ 4';
+
+                    statusBox.innerHTML = '✅ บันทึกผลเกม ' + gameNum + ' โต๊ะย่อย ' + subTable + ' สำเร็จ<br>' + resultText;
+                    statusBox.style.backgroundColor = '#d1fae5'; statusBox.style.color = '#065f46';
+                    clearScoreFields();
+                })
+                .withFailureHandler(handleError)
+                .fsSaveMatchResult(currentLevel, gameNum, subTable, idA, roundsA, idB, roundsB);
+        } else {
+            const pairLabel = document.getElementById('pairLabel').value;
+
+            google.script.run
+                .withSuccessHandler(function () {
+                    statusBox.innerText = '✅ บันทึกผล ' + pairLabel + ' สำเร็จ';
+                    statusBox.style.backgroundColor = '#d1fae5'; statusBox.style.color = '#065f46';
+                    clearScoreFields();
+                })
+                .withFailureHandler(handleError)
+                .fsSaveFinalResult(currentLevel, pairLabel, idA, roundsA, idB, roundsB);
+        }
+    }
+
+    function clearScoreFields() {
+        document.getElementById('idA').value = '';
+        document.getElementById('idB').value = '';
+        document.getElementById('roundsA').value = '';
+        document.getElementById('roundsB').value = '';
+        document.getElementById('roundsSumWarning').style.display = 'none';
+        if (currentMode === 'qualify') {
+            document.getElementById('subTable').value = ''; // เคลียร์โต๊ะย่อยด้วย เพื่อให้พิมพ์โต๊ะถัดไปได้ทันทีโดยไม่ต้องลบของเก่าเอง
+            document.getElementById('subTable').focus();
+        } else {
+            document.getElementById('idA').focus();
+        }
+        clearAutoFill();
+
+        // บันทึกสำเร็จแล้ว ถือว่าทำงานรอบนี้จบ -> รีโหลด tableMap ใหม่ทันที (จุดที่ข้อมูลมักเปลี่ยนพอดี)
+        // และรีเซ็ตแฟลกให้ auto-select เกมปัจจุบันใหม่ เผื่อย้อนไปแก้เกมอื่นไว้ชั่วคราว จะได้เด้งกลับมาเกมปัจจุบันให้เอง
+        if (currentMode === 'qualify') userTouchedGameDropdown = false;
+        loadTableMap(true);
+    }
+
+    function handleError(err) {
+        const statusBox = document.getElementById('statusBox');
+        statusBox.innerText = '❌ เกิดข้อผิดพลาด: ' + err.message;
+        statusBox.style.backgroundColor = '#fee2e2'; statusBox.style.color = '#991b1b';
+    }
+
+    // ตอนเปิดหน้าครั้งแรก โหลดแผนผังโต๊ะของระดับชั้นเริ่มต้น (มต้น) มาเก็บไว้ทันที
+    loadTableMap(true);
+
+    // Auto-refresh: เช็คซ้ำเป็นระยะทุก 30 วินาที ว่ามีการจัดโต๊ะเกมใหม่เกิดขึ้นหรือยัง (เช่น แอดมินอีกคนกดจัดโต๊ะจากหน้า admin)
+    // โหลดแบบ forceSelectGame=false เสมอ -> อัปเดตแค่ badge/ข้อมูล lookup เบื้องหลัง ไม่ไปแย่งค่าดรอปดาวน์คืนระหว่างกำลังกรอกอยู่
+    setInterval(function () {
+        loadTableMap(false);
+    }, 30000);
+</script>
+</body>
+</html>
