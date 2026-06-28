@@ -6,7 +6,7 @@ export async function GET() {
     supabase.from('players').select('*'),
     supabase.from('games').select('*'),
     supabase.from('finals').select('*'),
-    supabase.from('tables').select('*'),
+    supabase.from('table_assignments').select('*'),
   ])
   const backup = {
     version: 1,
@@ -28,7 +28,7 @@ export async function DELETE(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get('mode') // 'results' | 'all'
   await supabase.from('games').delete().neq('id', 0)
   await supabase.from('finals').delete().neq('id', 0)
-  await supabase.from('tables').delete().neq('id', 0)
+  await supabase.from('table_assignments').delete().neq('id', 0)
   await supabase.from('game_locks').delete().neq('id', 0)
   await supabase.from('audit_logs').delete().neq('id', 0)
   await supabase.from('broadcast').delete().neq('id', 0)
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Clear existing data then restore
     await supabase.from('games').delete().neq('id', 0)
     await supabase.from('finals').delete().neq('id', 0)
-    await supabase.from('tables').delete().neq('id', 0)
+    await supabase.from('table_assignments').delete().neq('id', 0)
     await supabase.from('players').delete().neq('id', 0)
 
     const results: Record<string, number> = {}
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       results.players = data?.length || 0
     }
     if (body.tables?.length) {
-      await supabase.from('tables').insert(body.tables.map(({ id: _id, ...r }: Record<string, unknown>) => r))
+      await supabase.from('table_assignments').insert(body.tables.map(({ id: _id, ...r }: Record<string, unknown>) => r))
       results.tables = body.tables.length
     }
     if (body.games?.length) {
