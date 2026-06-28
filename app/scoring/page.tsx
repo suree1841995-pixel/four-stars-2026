@@ -324,7 +324,7 @@ export default function ScoringPage() {
               <div className="flex gap-3 items-end">
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-purple-700 mb-1">รอบย่อยที่ชนะ — ฝั่ง 1</label>
-                  <input ref={rounds1Ref} type="number" min={0} max={3} step={0.5} value={rounds1}
+                  <input ref={rounds1Ref} type="number" inputMode="decimal" min={0} max={3} step={0.5} value={rounds1}
                     onChange={e => setRounds1(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); rounds2Ref.current?.focus() } }}
                     placeholder="0–3"
@@ -333,7 +333,7 @@ export default function ScoringPage() {
                 <div className="pb-3 font-black text-purple-300 text-xl">—</div>
                 <div className="flex-1">
                   <label className="block text-xs font-bold text-purple-700 mb-1">รอบย่อยที่ชนะ — ฝั่ง 2</label>
-                  <input ref={rounds2Ref} type="number" min={0} max={3} step={0.5} value={rounds2}
+                  <input ref={rounds2Ref} type="number" inputMode="decimal" min={0} max={3} step={0.5} value={rounds2}
                     onChange={e => setRounds2(e.target.value)}
                     placeholder="0–3"
                     className="w-full px-3 py-3 rounded-xl border-2 border-purple-200 bg-purple-50 font-black text-2xl text-center focus:outline-none focus:border-violet-500" />
