@@ -139,12 +139,7 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
     if (b.diffSum !== a.diffSum) return b.diffSum - a.diffSum
     return a.player.number - b.player.number
   })
-  list.forEach((s, i) => {
-    if (i === 0) { s.rank = 1; return }
-    const prev = list[i - 1]
-    const tied = prev.points === s.points && prev.diffSum === s.diffSum && prev.gamesPlayed > 0 && s.gamesPlayed > 0
-    s.rank = tied ? prev.rank : i + 1
-  })
+  list.forEach((s, i) => { s.rank = i + 1 })
   return list
 }
 
