@@ -136,12 +136,14 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
   const list = Object.values(stat)
   list.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points
-    return b.diffSum - a.diffSum
+    if (b.diffSum !== a.diffSum) return b.diffSum - a.diffSum
+    return a.player.number - b.player.number
   })
   list.forEach((s, i) => {
     if (i === 0) { s.rank = 1; return }
     const prev = list[i - 1]
-    s.rank = (prev.points === s.points && prev.diffSum === s.diffSum) ? prev.rank : i + 1
+    const tied = prev.points === s.points && prev.diffSum === s.diffSum && prev.gamesPlayed > 0 && s.gamesPlayed > 0
+    s.rank = tied ? prev.rank : i + 1
   })
   return list
 }
