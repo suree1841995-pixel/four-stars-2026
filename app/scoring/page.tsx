@@ -38,6 +38,7 @@ export default function ScoringPage() {
   const [saving, setSaving] = useState(false)
   const [userPickedGame, setUserPickedGame] = useState(false)
   const [confirmOverwrite, setConfirmOverwrite] = useState<{ existing: { rounds1: number; rounds2: number }; payload: object } | null>(null)
+  const [scoredSubTables, setScoredSubTables] = useState<Set<string>>(new Set())
 
   const tableNumRef = useRef<HTMLInputElement>(null)
   const rounds1Ref = useRef<HTMLInputElement>(null)
@@ -46,9 +47,10 @@ export default function ScoringPage() {
   const subTable = tableNum && tableSide ? `${tableNum}${tableSide}` : ''
 
   const loadTableMap = useCallback(async (forceSelectGame = false) => {
-    const [taRes, finalsRes] = await Promise.all([
+    const [taRes, finalsRes, gamesRes] = await Promise.all([
       fetch(`/api/tables?level=${encodeURIComponent(level)}`),
-      fetch(`/api/finals?level=${encodeURIComponent(level)}`)
+      fetch(`/api/finals?level=${encodeURIComponent(level)}`),
+      fetch(`/api/games?level=${encodeURIComponent(level)}`),
     ])
     if (!taRes.ok) return
     const taData: {
@@ -83,6 +85,12 @@ export default function ScoringPage() {
           is_bye: false
         }
       }
+    }
+
+    // คำนวณว่าโต๊ะไหนกรอกแล้ว
+    if (gamesRes.ok) {
+      const gd: { game: number; sub_table: string; rounds1: number | null }[] = await gamesRes.json()
+      setScoredSubTables(new Set(gd.filter(g => g.rounds1 !== null).map(g => `${g.game}_${g.sub_table}`)))
     }
 
     const newMap: TableMap = { latestGame, games, finals }
@@ -128,6 +136,15 @@ export default function ScoringPage() {
 
   const sumWarning = rounds1 !== '' && rounds2 !== '' && (Number(rounds1) + Number(rounds2)) !== 3
 
+  // คำนวณ pills
+  const currentGameTables = tableMap?.games[gameNum] || {}
+  const allSubTablesSorted = Object.keys(currentGameTables).sort((a, b) => {
+    const na = parseInt(a.replace(/\D/g, '')), nb = parseInt(b.replace(/\D/g, ''))
+    return na !== nb ? na - nb : a.localeCompare(b)
+  })
+  const nonByeSubs = allSubTablesSorted.filter(st => !currentGameTables[st].is_bye)
+  const scoredCount = nonByeSubs.filter(st => scoredSubTables.has(`${gameNum}_${st}`)).length
+
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     if (!id1 && !isBye) { setStatus({ text: 'ยังไม่พบข้อมูลคู่แข่ง — เลือกเกมและโต๊ะก่อน', type: 'err' }); return }
@@ -149,6 +166,8 @@ export default function ScoringPage() {
           return
         }
         if (!res.ok) { const d = await res.json(); setStatus({ text: `❌ ${d.error}`, type: 'err' }); return }
+        // อัปเดต scoredSubTables ทันที
+        setScoredSubTables(prev => new Set([...prev, `${gameNum}_${subTable}`]))
         const r1 = Number(rounds1), r2 = Number(rounds2)
         const resultText = r1 > r2 ? `${name1} ชนะ (${r1}-${r2})` : r1 < r2 ? `${name2} ชนะ (${r2}-${r1})` : `เสมอ (${r1}-${r2})`
         setStatus({ text: `✅ บันทึกเกม ${gameNum} โต๊ะ ${subTable} — ${resultText}`, type: 'ok' })
@@ -185,6 +204,7 @@ export default function ScoringPage() {
     })
     setConfirmOverwrite(null)
     if (!res.ok) { const d = await res.json(); setStatus({ text: `❌ ${d.error}`, type: 'err' }); setSaving(false); return }
+    setScoredSubTables(prev => new Set([...prev, `${gameNum}_${subTable}`]))
     const r1 = Number(rounds1), r2 = Number(rounds2)
     const resultText = r1 > r2 ? `${name1} ชนะ (${r1}-${r2})` : r1 < r2 ? `${name2} ชนะ (${r2}-${r1})` : `เสมอ (${r1}-${r2})`
     setStatus({ text: `✅ เขียนทับผลเกม ${gameNum} โต๊ะ ${subTable} — ${resultText}`, type: 'ok' })
@@ -256,6 +276,47 @@ export default function ScoringPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Progress pills */}
+              {gameNum && allSubTablesSorted.length > 0 && (
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="text-xs font-bold text-purple-700">📋 ความคืบหน้าเกม {gameNum}</label>
+                    <span className="text-xs font-bold text-purple-400">{scoredCount}/{nonByeSubs.length} คู่</span>
+                  </div>
+                  <div className="w-full bg-purple-100 rounded-full h-1.5 mb-2">
+                    <div className="bg-emerald-400 h-1.5 rounded-full transition-all duration-500"
+                      style={{ width: `${nonByeSubs.length > 0 ? (scoredCount / nonByeSubs.length) * 100 : 0}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {allSubTablesSorted.map(st => {
+                      const entry = currentGameTables[st]
+                      if (entry.is_bye) return (
+                        <span key={st} className="px-2 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-300 border border-blue-100">
+                          {st}🎁
+                        </span>
+                      )
+                      const isScored = scoredSubTables.has(`${gameNum}_${st}`)
+                      const isCurrent = st === subTable
+                      return (
+                        <button key={st} type="button"
+                          onClick={() => {
+                            const n = st.replace(/\D/g, '')
+                            const s = st.slice(-1) as 'A' | 'B'
+                            setTableNum(n); setTableSide(s); setLookupStatus('idle')
+                          }}
+                          className={`px-2.5 py-1 rounded-lg font-black text-xs transition-all border-2 active:scale-95 ${
+                            isCurrent ? 'border-violet-500 bg-violet-100 text-violet-700 shadow' :
+                            isScored ? 'border-emerald-200 bg-emerald-50 text-emerald-600' :
+                            'border-red-200 bg-red-50 text-red-500 hover:border-red-400'
+                          }`}>
+                          {st}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Table number + A/B selector */}
               <div>
