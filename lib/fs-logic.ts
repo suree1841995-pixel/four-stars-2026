@@ -99,8 +99,9 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
     if (!g.player2_id) {
       const s = stat[g.player1_id]
       if (!s) continue
-      const r1 = g.rounds1 ?? 0
-      const r2 = g.rounds2 ?? 0
+      if (g.rounds1 === null || g.rounds2 === null) continue
+      const r1 = g.rounds1
+      const r2 = g.rounds2
       s.diffSum += r1 - r2
       s.gamesPlayed++
       if (r1 > r2) { s.w++; s.points += 2 }
@@ -109,6 +110,7 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
       continue
     }
 
+    if (g.rounds1 === null || g.rounds2 === null) continue
     const r = computeMatchResult(g.rounds1, g.rounds2)
     const s1 = stat[g.player1_id]
     const s2 = stat[g.player2_id]
