@@ -76,9 +76,12 @@ export async function PATCH(req: NextRequest) {
   if (rounds1 === undefined || rounds1 === null || rounds2 === undefined || rounds2 === null) {
     return NextResponse.json({ error: 'กรุณากรอกคะแนนทั้งสองฝั่ง' }, { status: 400 })
   }
-  const sum = Number(rounds1) + Number(rounds2)
-  if (Math.abs(sum - 3) > 0.001) {
-    return NextResponse.json({ error: `คะแนนรวมต้องเท่ากับ 3 (ได้ ${sum})` }, { status: 400 })
+  const r1 = Number(rounds1), r2 = Number(rounds2)
+  if (isNaN(r1) || isNaN(r2) || r1 < 0 || r1 > 3 || r2 < 0 || r2 > 3) {
+    return NextResponse.json({ error: `คะแนนแต่ละฝั่งต้องอยู่ระหว่าง 0–3` }, { status: 400 })
+  }
+  if (Math.abs(r1 + r2 - 3) > 0.001) {
+    return NextResponse.json({ error: `คะแนนรวมต้องเท่ากับ 3 (ได้ ${r1 + r2})` }, { status: 400 })
   }
 
   const { data, error } = await supabase.from('finals')
