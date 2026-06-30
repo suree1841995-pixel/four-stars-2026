@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { normalizeLevel } from '@/lib/fs-logic'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -8,12 +9,22 @@ export async function POST(req: NextRequest) {
     force: boolean
   }
 
-  // Normalize input
+  // Normalize input — แปลง level ให้เป็นค่ามาตรฐาน 'มต้น'/'มปลาย' กัน unicode/เว้นวรรคเพี้ยน
   const normalized = rows.map(r => ({
     name: r.name.trim(),
-    level: r.level.trim(),
+    level: normalizeLevel(r.level || ''),
     room: (r.room || '').trim(),
   }))
+
+  // ตรวจ level ที่ไม่ถูกต้อง — กันข้อมูลหายเงียบ (เพิ่มแล้วไม่โผล่ในแท็บไหน)
+  const badLevels = normalized.filter(r => r.level !== 'มต้น' && r.level !== 'มปลาย')
+  if (badLevels.length > 0) {
+    const examples = [...new Set(badLevels.map(r => `"${r.name}"`))].slice(0, 5).join(', ')
+    return NextResponse.json(
+      { error: `ระดับชั้นต้องเป็น "มต้น" หรือ "มปลาย" เท่านั้น — พบ ${badLevels.length} แถวที่ผิด (เช่น ${examples})` },
+      { status: 400 }
+    )
+  }
 
   const { data: existing } = await supabase.from('players').select('name, level')
   const existingSet = new Set((existing || []).map((p: { name: string; level: string }) => `${p.name}|${p.level}`))

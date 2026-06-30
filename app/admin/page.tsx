@@ -157,8 +157,9 @@ export default function AdminPage() {
     if (latestGame === 0) return
     const res = await fetch(`/api/games?level=${encodeURIComponent(level)}&game=${latestGame}`)
     if (!res.ok) return
-    const data: { sub_table: string }[] = await res.json()
-    setScoredCount(data.length)
+    const data: { sub_table: string; rounds1: number | null; rounds2: number | null }[] = await res.json()
+    // นับเฉพาะคู่จริงที่กรอกแล้ว (bye มี rounds2=null — ไม่นับเป็นโต๊ะที่ต้องกรอก)
+    setScoredCount(data.filter(r => r.rounds1 !== null && r.rounds2 !== null).length)
   }, [level, latestGame])
 
   useEffect(() => {

@@ -99,9 +99,9 @@ export function computeStandings(players: Player[], gameRows: GameRow[]): Standi
     if (!g.player2_id) {
       const s = stat[g.player1_id]
       if (!s) continue
-      if (g.rounds1 === null || g.rounds2 === null) continue
+      if (g.rounds1 === null) continue   // bye ยังไม่ถูกบันทึก (ปกติ auto = 2)
       const r1 = g.rounds1
-      const r2 = g.rounds2
+      const r2 = g.rounds2 ?? 0           // bye: rounds2 เป็น null = ชนะบาย
       s.diffSum += r1 - r2
       s.gamesPlayed++
       if (r1 > r2) { s.w++; s.points += 2 }

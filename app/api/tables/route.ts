@@ -25,7 +25,13 @@ export async function POST(req: NextRequest) {
   const { data: playersData } = await supabase.from('players').select('*').eq('level', level).order('number')
   const players = (playersData || []) as Player[]
   const playerMap: Record<number, Player> = {}
-  players.forEach(p => { playerMap[p.id] = p })
+  const numToId: Record<number, number> = {}
+  players.forEach(p => { playerMap[p.id] = p; numToId[p.number] = p.id })
+
+  // gibsonizedIds จาก UI เป็น "หมายเลขนักกีฬา" (player.number) → แปลงเป็น player.id
+  const gibsonizedPlayerIds = (gibsonizedIds || [])
+    .map(n => numToId[n])
+    .filter((id): id is number => id != null)
 
   // ตรวจว่ากรอกผลเกมก่อนหน้าครบ (เกม 1 ไม่ต้องตรวจ)
   const prevGamesToCheck = isLastGame ? Array.from({ length: game - 1 }, (_, i) => i + 1) : game > 1 ? [game - 1] : []
@@ -69,7 +75,7 @@ export async function POST(req: NextRequest) {
         played.add(`${Math.min(g.player1_id, g.player2_id)}_${Math.max(g.player1_id, g.player2_id)}`)
       }
     }
-    tables = generateKingOfHill(standings, gibsonizedIds, played)
+    tables = generateKingOfHill(standings, gibsonizedPlayerIds, played)
   } else if (game % 2 === 0) {
     // เลขคู่ = ไขว้
     const prevGame = game - 1
@@ -85,11 +91,12 @@ export async function POST(req: NextRequest) {
       if (!tableMap[tn]) tableMap[tn] = { table_num: tn, pairA: null, pairB: null, byeA: null, byeB: null }
       const t = tableMap[tn]
       if (!row.player1) continue
-      if (row.is_bye) { t.byeA = row.player1 as Player; continue }
+      // byeA (bye ทั้งโต๊ะ) และ byeB (โต๊ะ 3 คน) ต่าง is_bye=true เหมือนกัน — แยกด้วย sub_table A/B
       if (row.sub_table.endsWith('A')) {
-        if (row.player2) t.pairA = { p1: row.player1 as Player, p2: row.player2 as Player }
+        if (row.is_bye) t.byeA = row.player1 as Player
+        else if (row.player2) t.pairA = { p1: row.player1 as Player, p2: row.player2 as Player }
       } else {
-        if (!row.player2) t.byeB = row.player1 as Player
+        if (row.is_bye || !row.player2) t.byeB = row.player1 as Player
         else t.pairB = { p1: row.player1 as Player, p2: row.player2 as Player }
       }
     }
