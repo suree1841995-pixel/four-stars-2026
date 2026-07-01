@@ -45,11 +45,14 @@ export async function GET(req: NextRequest) {
 
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
   const levelLabel = level === 'มต้น' ? 'มต้น' : 'มปลาย'
+  // ชื่อไฟล์ภาษาไทยต้อง encode แบบ RFC 5987 (filename* ) — header เป็น ASCII เท่านั้น
+  const asciiFallback = `results_${level === 'มต้น' ? 'lower' : 'upper'}.xlsx`
+  const utf8Name = encodeURIComponent(`ผลการแข่งขัน_${levelLabel}.xlsx`)
 
   return new NextResponse(buf, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="ผลการแข่งขัน_${levelLabel}.xlsx"`,
+      'Content-Disposition': `attachment; filename="${asciiFallback}"; filename*=UTF-8''${utf8Name}`,
     },
   })
 }

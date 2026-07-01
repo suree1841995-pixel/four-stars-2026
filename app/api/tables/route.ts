@@ -120,6 +120,10 @@ export async function POST(req: NextRequest) {
   const { error: delErr } = await supabase.from('table_assignments').delete().eq('level', level).eq('game', game)
   if (delErr) return NextResponse.json({ error: `ลบโต๊ะเดิมไม่สำเร็จ: ${delErr.message}` }, { status: 500 })
 
+  // ลบคะแนนเดิมของเกมนี้ด้วย (กัน bye ผี / คะแนนค้างที่ไม่ตรงคู่ใหม่เมื่อสุ่มโต๊ะซ้ำ)
+  const { error: delScoreErr } = await supabase.from('games').delete().eq('level', level).eq('game', game)
+  if (delScoreErr) return NextResponse.json({ error: `ลบคะแนนเดิมไม่สำเร็จ: ${delScoreErr.message}` }, { status: 500 })
+
   const rows: object[] = []
   const byeGameRows: object[] = []
 

@@ -12,9 +12,9 @@ interface TableRow { game: number; table_num: number; sub_table: string; player1
 interface Standing { rank: number; player: { id: number; name: string; number: number; room: string }; points: number; diffSum: number; w: number; t: number; l: number }
 interface AuditLog { id: number; created_at: string; level: string; game: number; sub_table: string; player1_name: string; player2_name: string; rounds1: number; rounds2: number; action: string }
 
+// หมายเหตุ: "เกมสุดท้าย = King of the Hill" ถูก override ที่จุดเรียกด้วย g === gameCount
 function gameLabel(g: number) {
   if (g === 1) return 'Random'
-  if (g === 6) return 'King of the Hill'
   return g % 2 === 0 ? 'ไขว้' : 'Swiss'
 }
 
@@ -188,6 +188,9 @@ export default function AdminPage() {
   const tables = allTables.filter(r => (r as { game: number }).game === latestGame)
 
   async function generateTables(game: number) {
+    // เตือนถ้าจัดโต๊ะซ้ำเกมที่มีอยู่แล้ว — การสุ่มใหม่จะลบคะแนนเกมนี้ทิ้ง
+    const existing = unlock?.games.find(x => x.game === game)
+    if (existing?.done && !confirm(`เกม ${game} จัดโต๊ะไว้แล้ว — การจัดใหม่จะลบผลคะแนนของเกม ${game} ทั้งหมด แน่ใจหรือไม่?`)) return
     setLoading(true); setMsg(null)
     const gibsonIds = game === gameCount
       ? gibsonInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
