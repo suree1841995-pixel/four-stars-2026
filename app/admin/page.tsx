@@ -227,12 +227,17 @@ export default function AdminPage() {
     if (!playerFile) return
     setImportLoading(true); setImportMsg(null)
     try {
-      const text = await playerFile.text()
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-      const rows = lines.slice(1).map(line => {
-        const cols = line.split(',')
-        return { name: (cols[0] || '').trim(), level: (cols[1] || '').trim(), room: (cols[2] || '').trim() }
-      }).filter(r => r.name && r.level)
+      // รองรับทั้ง .xlsx/.xls และ .csv — parse ด้วย XLSX ให้เหมือนกัน
+      const buf = await playerFile.arrayBuffer()
+      const wb = XLSX.read(buf, { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const matrix: unknown[][] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false })
+      const rows = matrix.slice(1).map(cols => ({
+        name: String(cols[0] ?? '').trim(),
+        level: String(cols[1] ?? '').trim(),
+        room: String(cols[2] ?? '').trim(),
+      })).filter(r => r.name && r.level)
+      if (rows.length === 0) { setImportMsg('❌ ไม่พบข้อมูลในไฟล์ — ตรวจสอบว่ามีคอลัมน์ ชื่อ,ระดับ,ห้อง'); setImportLoading(false); return }
       const res = await fetch('/api/players/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows, force: false }) })
       const d = await res.json()
       if (!res.ok) { setImportMsg(`❌ ${d.error ?? 'นำเข้าไม่สำเร็จ'}`); return }
@@ -244,7 +249,7 @@ export default function AdminPage() {
       } else {
         setImportMsg(`✅ เพิ่มผู้เล่น ${d.inserted} คน สำเร็จ`)
       }
-    } catch { setImportMsg('❌ อ่านไฟล์ไม่ได้ — ตรวจสอบ format CSV') }
+    } catch { setImportMsg('❌ อ่านไฟล์ไม่ได้ — รองรับ .xlsx และ .csv (คอลัมน์: ชื่อ, ระดับ, ห้อง)') }
     setImportLoading(false)
     loadPlayers()
   }
@@ -742,14 +747,14 @@ export default function AdminPage() {
                 {/* นำเข้า CSV */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-bold text-purple-700">📋 นำเข้าผู้เล่น (CSV)</p>
+                    <p className="text-xs font-bold text-purple-700">📋 นำเข้าผู้เล่น (Excel / CSV)</p>
                     <button onClick={downloadSampleExcel}
                       className="text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 border border-emerald-200 hover:bg-emerald-200 transition">
                       📥 ดาวน์โหลดตัวอย่าง .xlsx
                     </button>
                   </div>
-                  <p className="text-xs text-purple-400 mb-2">format: ชื่อ,ระดับ(มต้น/มปลาย),ห้อง — บรรทัดแรกเป็น header</p>
-                  <input type="file" accept=".csv"
+                  <p className="text-xs text-purple-400 mb-2">คอลัมน์: ชื่อ, ระดับ(มต้น/มปลาย), ห้อง — บรรทัดแรกเป็น header</p>
+                  <input type="file" accept=".xlsx,.xls,.csv"
                     onChange={e => { setPlayerFile(e.target.files?.[0] || null); setImportMsg(null) }}
                     className="w-full text-sm text-purple-700 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 mb-2" />
                   <button disabled={!playerFile || importLoading} onClick={importPlayers}
