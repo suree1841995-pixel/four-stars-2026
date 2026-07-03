@@ -24,6 +24,9 @@ export async function POST(req: NextRequest) {
 
   const { data: playersData } = await supabase.from('players').select('*').eq('level', level).order('number')
   const players = (playersData || []) as Player[]
+  if (players.length === 0) {
+    return NextResponse.json({ error: `ไม่พบผู้เล่นในระดับ "${level}" — เพิ่มรายชื่อก่อนจัดโต๊ะ` }, { status: 400 })
+  }
   const playerMap: Record<number, Player> = {}
   const numToId: Record<number, number> = {}
   players.forEach(p => { playerMap[p.id] = p; numToId[p.number] = p.id })
