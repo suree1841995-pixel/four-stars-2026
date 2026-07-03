@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/lib/useAuth'
 import LoginScreen from '@/components/LoginScreen'
+import { playerCode } from '@/lib/fs-logic'
 
 type Level = 'มต้น' | 'มปลาย'
 type Mode = 'qualify' | 'final'
@@ -377,12 +378,12 @@ export default function ScoringPage() {
               <div className="flex gap-2 items-center">
                 <div className={`flex-1 rounded-2xl p-3 border-2 text-center transition-all ${lookupStatus === 'ok' ? 'bg-violet-50 border-violet-200' : 'bg-purple-50 border-purple-100'}`}>
                   <p className="text-[10px] font-black text-purple-400 uppercase tracking-wider mb-0.5">ฝั่ง 1</p>
-                  <p className="font-black text-purple-800 text-sm leading-tight">{name1 ? `${name1}${num1 > 0 ? ` (${num1})` : ''}` : '—'}</p>
+                  <p className="font-black text-purple-800 text-sm leading-tight">{name1 ? `${name1}${num1 > 0 ? ` (${playerCode(level, num1)})` : ''}` : '—'}</p>
                 </div>
                 <div className="font-black text-purple-300 text-xl">VS</div>
                 <div className={`flex-1 rounded-2xl p-3 border-2 text-center transition-all ${lookupStatus === 'ok' ? 'bg-fuchsia-50 border-fuchsia-200' : 'bg-purple-50 border-purple-100'}`}>
                   <p className="text-[10px] font-black text-purple-400 uppercase tracking-wider mb-0.5">ฝั่ง 2</p>
-                  <p className="font-black text-purple-800 text-sm leading-tight">{name2 ? `${name2}${num2 > 0 ? ` (${num2})` : ''}` : '—'}</p>
+                  <p className="font-black text-purple-800 text-sm leading-tight">{name2 ? `${name2}${num2 > 0 ? ` (${playerCode(level, num2)})` : ''}` : '—'}</p>
                 </div>
               </div>
 

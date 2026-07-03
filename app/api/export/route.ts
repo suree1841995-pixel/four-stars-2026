@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { computeStandings, Player, GameRow } from '@/lib/fs-logic'
+import { computeStandings, playerCode, Player, GameRow } from '@/lib/fs-logic'
 import * as XLSX from 'xlsx'
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   const rows = standings.map(s => ({
     'อันดับ': s.rank,
-    'เลขที่': s.player.number,
+    'รหัส': playerCode(level, s.player.number),
     'ชื่อ-สกุล': s.player.name,
     'ห้อง': s.player.room,
     'ชนะ (W)': s.w,

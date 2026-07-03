@@ -70,6 +70,14 @@ export function normalizeLevel(level: string): string {
 }
 
 // ============================================================
+//  รหัสนักกีฬา: มต้น → A01, A02, ... / มปลาย → B01, B02, ...
+// ============================================================
+export function playerCode(level: string, number: number): string {
+  const prefix = normalizeLevel(level) === 'มปลาย' ? 'B' : 'A'
+  return `${prefix}${String(number).padStart(2, '0')}`
+}
+
+// ============================================================
 //  คำนวณผล W/T/L และผลต่างรอบย่อย จากคู่เดียว
 // ============================================================
 export function computeMatchResult(rounds1: number | null, rounds2: number | null) {

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/lib/useAuth'
 import LoginScreen from '@/components/LoginScreen'
+import { playerCode } from '@/lib/fs-logic'
 import * as XLSX from 'xlsx'
 import QRCode from 'qrcode'
 
@@ -192,8 +193,9 @@ export default function AdminPage() {
     const existing = unlock?.games.find(x => x.game === game)
     if (existing?.done && !confirm(`เกม ${game} จัดโต๊ะไว้แล้ว — การจัดใหม่จะลบผลคะแนนของเกม ${game} ทั้งหมด แน่ใจหรือไม่?`)) return
     setLoading(true); setMsg(null)
+    // รองรับทั้ง "A01,A04" และ "1,4" — ตัดตัวอักษรออกเหลือเลข
     const gibsonIds = game === gameCount
-      ? gibsonInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
+      ? gibsonInput.split(',').map(s => parseInt(s.trim().replace(/\D/g, ''), 10)).filter(n => !isNaN(n))
       : []
     const res = await fetch('/api/tables', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -215,7 +217,7 @@ export default function AdminPage() {
     if (!d.hasEnoughPlayers) { showMsg('ผู้เล่นไม่ครบ 5 คน', 'info'); return }
     if (!d.suggested?.length) { showMsg('ยังไม่มีใครคะแนนลอยลำ', 'info'); setGibsonSuggest([]); return }
     setGibsonSuggest(d.suggested.map((s: Standing) => ({ name: s.player.name, number: s.player.number, points: s.points, rank: s.rank })))
-    setGibsonInput(d.suggested.map((s: Standing) => s.player.number).join(','))
+    setGibsonInput(d.suggested.map((s: Standing) => playerCode(level, s.player.number)).join(','))
   }
 
   async function createFinals() {
@@ -460,11 +462,11 @@ export default function AdminPage() {
                 <div className="mb-2 text-xs text-purple-700 bg-white rounded-xl p-2 border border-purple-100">
                   {gibsonSuggest.length === 0
                     ? '✅ ยังไม่มีใครลอยลำ'
-                    : gibsonSuggest.map(s => <div key={s.number}>อันดับ {s.rank} — {s.name} (#{s.number}, {s.points} แต้ม)</div>)}
+                    : gibsonSuggest.map(s => <div key={s.number}>อันดับ {s.rank} — {s.name} ({playerCode(level, s.number)}, {s.points} แต้ม)</div>)}
                 </div>
               )}
               <input type="text" value={gibsonInput} onChange={e => setGibsonInput(e.target.value)}
-                placeholder="หมายเลขนักกีฬา คั่นด้วยจุลภาค เช่น 4,7"
+                placeholder="รหัสนักกีฬา คั่นด้วยจุลภาค เช่น A01,A04"
                 className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-white text-sm focus:outline-none focus:border-purple-400" />
             </div>
           </div>
@@ -485,8 +487,8 @@ export default function AdminPage() {
                       <div key={r.sub_table}>
                         <span className="font-black text-purple-500">{r.sub_table.slice(-1)}:</span>{' '}
                         {r.is_bye
-                          ? <span className="text-blue-600">🎁 {r.player1?.name} (#{r.player1?.number}) ได้ bye</span>
-                          : <span>{r.player1?.name} <span className="text-purple-400 font-bold">(#{r.player1?.number})</span> <strong className="text-purple-600 mx-1">VS</strong> {r.player2?.name} <span className="text-purple-400 font-bold">(#{r.player2?.number})</span></span>
+                          ? <span className="text-blue-600">🎁 {r.player1?.name} ({r.player1 ? playerCode(level, r.player1.number) : ''}) ได้ bye</span>
+                          : <span>{r.player1?.name} <span className="text-purple-400 font-bold">({r.player1 ? playerCode(level, r.player1.number) : ''})</span> <strong className="text-purple-600 mx-1">VS</strong> {r.player2?.name} <span className="text-purple-400 font-bold">({r.player2 ? playerCode(level, r.player2.number) : ''})</span></span>
                         }
                       </div>
                     ))}
@@ -511,7 +513,7 @@ export default function AdminPage() {
               : finals.map(f => (
                 <div key={f.pair_label} className="flex gap-3 items-center bg-purple-50 rounded-2xl px-4 py-3 mb-2 border border-purple-100">
                   <div className="font-black text-purple-700 text-xs min-w-[80px]">{f.pair_label}</div>
-                  <div className="text-sm">{f.player1?.name} <span className="text-purple-400">(#{f.player1?.number})</span> <strong className="text-purple-600 mx-1">VS</strong> {f.player2?.name} <span className="text-purple-400">(#{f.player2?.number})</span></div>
+                  <div className="text-sm">{f.player1?.name} <span className="text-purple-400">({f.player1 ? playerCode(level, f.player1.number) : ''})</span> <strong className="text-purple-600 mx-1">VS</strong> {f.player2?.name} <span className="text-purple-400">({f.player2 ? playerCode(level, f.player2.number) : ''})</span></div>
                 </div>
               ))}
           </div>
@@ -544,7 +546,7 @@ export default function AdminPage() {
                         <td className="py-2 px-2 text-center">
                           {i < 3 ? ['🥇', '🥈', '🥉'][i] : <span className="text-purple-500">{s.rank}</span>}
                         </td>
-                        <td className="py-2 px-2">{s.player.name} <span className="text-purple-400">(#{s.player.number})</span></td>
+                        <td className="py-2 px-2">{s.player.name} <span className="text-purple-400">({playerCode(level, s.player.number)})</span></td>
                         <td className="py-2 px-2 text-center text-purple-400">{s.player.room}</td>
                         <td className="py-2 px-2 text-center text-purple-600">{s.w}-{s.t}-{s.l}</td>
                         <td className="py-2 px-2 text-center font-black text-purple-800">{s.points}</td>
@@ -799,7 +801,7 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-black text-purple-400 min-w-[28px]">#{p.number}</span>
+                                <span className="text-xs font-black text-purple-400 min-w-[34px]">{playerCode(level, p.number)}</span>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-bold text-purple-900 truncate">{p.name}</p>
                                   <p className="text-xs text-purple-400">{p.room}</p>

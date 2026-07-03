@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 export type AuthRole = 'admin' | 'scoring'
 
 export function useAuth(role: AuthRole) {
-  const SESSION_KEY = `fs_auth_${role}`
+  // v2: บังคับ login ใหม่หลังเพิ่มระบบ cookie token (client เก่ามีแค่ flag ไม่มี cookie)
+  const SESSION_KEY = `fs_auth_${role}_v2`
   const [authed, setAuthed] = useState(false)
   const [checked, setChecked] = useState(false)
 

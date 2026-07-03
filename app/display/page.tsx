@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { computeStandings, computeMatchResult, getAwardsSummary, Player, GameRow, FinalRow } from '@/lib/fs-logic'
+import { computeStandings, computeMatchResult, getAwardsSummary, playerCode, Player, GameRow, FinalRow } from '@/lib/fs-logic'
 
 type Level = 'มต้น' | 'มปลาย'
 type View = 'standings' | 'tables' | 'finals' | 'awards'
@@ -202,7 +202,7 @@ export default function DisplayPage() {
                       </td>
                       <td className="py-4 px-5">
                         <span className="font-black text-2xl text-gray-900">{s.player.name}</span>
-                        <span className="text-purple-400 font-bold text-lg ml-2">(#{s.player.number})</span>
+                        <span className="text-purple-400 font-bold text-lg ml-2">({playerCode(level, s.player.number)})</span>
                       </td>
                       <td className="py-4 px-5 text-center font-bold text-xl text-purple-500">{s.w}-{s.t}-{s.l}</td>
                       <td className="py-4 px-5 text-center font-black text-4xl text-gray-900">{s.points}</td>
@@ -243,13 +243,13 @@ export default function DisplayPage() {
                               <p key={r.sub_table} className="text-base flex items-center gap-2 leading-snug">
                                 <strong className="text-purple-500 w-5 shrink-0">{r.sub_table.slice(-1)}:</strong>
                                 {r.is_bye
-                                  ? <span className="text-blue-500 font-semibold">🎁 {r.player1?.name} <span className="text-gray-400">(#{r.player1?.number})</span> bye</span>
+                                  ? <span className="text-blue-500 font-semibold">🎁 {r.player1?.name} <span className="text-gray-400">({r.player1 ? playerCode(level, r.player1.number) : ''})</span> bye</span>
                                   : <>
                                     <span className={`inline-block w-2.5 h-2.5 rounded-full shrink-0 ${scoredSet.has(r.sub_table) ? 'bg-emerald-400' : 'bg-gray-300'}`} />
                                     <span className="text-gray-800 font-semibold">
-                                      {r.player1?.name} <span className="text-purple-500 font-black">(#{r.player1?.number})</span>
+                                      {r.player1?.name} <span className="text-purple-500 font-black">({r.player1 ? playerCode(level, r.player1.number) : ''})</span>
                                       <strong className="text-purple-300 mx-2">VS</strong>
-                                      {r.player2?.name} <span className="text-purple-500 font-black">(#{r.player2?.number})</span>
+                                      {r.player2?.name} <span className="text-purple-500 font-black">({r.player2 ? playerCode(level, r.player2.number) : ''})</span>
                                     </span>
                                   </>
                                 }
@@ -312,7 +312,7 @@ export default function DisplayPage() {
                   <div>
                     <p className="text-sm font-black text-yellow-700 uppercase tracking-widest mb-1">ชนะเลิศ อันดับ 1</p>
                     <p className="font-black text-4xl text-gray-900">{awards.first.name}</p>
-                    <p className="text-yellow-600 text-xl font-semibold mt-1">หมายเลข {awards.first.number} · {awards.first.room}</p>
+                    <p className="text-yellow-600 text-xl font-semibold mt-1">รหัส {playerCode(level, awards.first.number)} · {awards.first.room}</p>
                   </div>
                 </div>
               )}
@@ -322,7 +322,7 @@ export default function DisplayPage() {
                   <div>
                     <p className="text-sm font-black text-slate-600 uppercase tracking-widest mb-1">รองชนะเลิศ อันดับ 2</p>
                     <p className="font-black text-4xl text-gray-900">{awards.second.name}</p>
-                    <p className="text-slate-500 text-xl font-semibold mt-1">หมายเลข {awards.second.number} · {awards.second.room}</p>
+                    <p className="text-slate-500 text-xl font-semibold mt-1">รหัส {playerCode(level, awards.second.number)} · {awards.second.room}</p>
                   </div>
                 </div>
               )}
@@ -332,7 +332,7 @@ export default function DisplayPage() {
                   <div>
                     <p className="text-sm font-black text-purple-700 uppercase tracking-widest mb-1">อันดับ 3</p>
                     <p className="font-black text-4xl text-gray-900">{awards.third.name}</p>
-                    <p className="text-purple-600 text-xl font-semibold mt-1">หมายเลข {awards.third.number} · {awards.third.room}</p>
+                    <p className="text-purple-600 text-xl font-semibold mt-1">รหัส {playerCode(level, awards.third.number)} · {awards.third.room}</p>
                   </div>
                 </div>
               )}
@@ -448,7 +448,7 @@ export default function DisplayPage() {
                       </span>
                     </td>
                     <td className={`py-2.5 px-3 font-semibold text-sm ${dk.text}`}>
-                      {s.player.name}<span className={`font-normal text-xs ml-1 ${dk.subtext}`}>(#{s.player.number})</span>
+                      {s.player.name}<span className={`font-normal text-xs ml-1 ${dk.subtext}`}>({playerCode(level, s.player.number)})</span>
                     </td>
                     <td className={`py-2.5 px-3 text-center text-sm ${dk.subtext} hidden sm:table-cell`}>{s.player.room}</td>
                     <td className="py-2.5 px-3 text-center text-sm text-purple-500">{s.w}-{s.t}-{s.l}</td>
@@ -488,11 +488,11 @@ export default function DisplayPage() {
                               <strong className="text-purple-500">{r.sub_table.slice(-1)}:</strong>
                               {!r.is_bye && <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${scoredSet.has(r.sub_table) ? 'bg-emerald-400' : 'bg-gray-300'}`} />}
                               {r.is_bye
-                                ? <span className="text-blue-400">🎁 {r.player1?.name} <span className="text-xs">(#{r.player1?.number})</span> ได้ bye</span>
+                                ? <span className="text-blue-400">🎁 {r.player1?.name} <span className="text-xs">({r.player1 ? playerCode(level, r.player1.number) : ''})</span> ได้ bye</span>
                                 : <span>
-                                  {r.player1?.name} <span className={`font-black ${dk.subtext}`}>(#{r.player1?.number})</span>
+                                  {r.player1?.name} <span className={`font-black ${dk.subtext}`}>({r.player1 ? playerCode(level, r.player1.number) : ''})</span>
                                   <strong className="text-purple-500 mx-2">VS</strong>
-                                  {r.player2?.name} <span className={`font-black ${dk.subtext}`}>(#{r.player2?.number})</span>
+                                  {r.player2?.name} <span className={`font-black ${dk.subtext}`}>({r.player2 ? playerCode(level, r.player2.number) : ''})</span>
                                 </span>
                               }
                             </p>
@@ -551,7 +551,7 @@ export default function DisplayPage() {
                 <div>
                   <p className="text-xs font-black text-yellow-700 uppercase tracking-widest mb-1">ชนะเลิศ อันดับ 1</p>
                   <p className="font-black text-xl text-gray-900">{awards.first.name}</p>
-                  <p className="text-yellow-600 text-sm font-semibold">หมายเลข {awards.first.number} · {awards.first.room}</p>
+                  <p className="text-yellow-600 text-sm font-semibold">รหัส {playerCode(level, awards.first.number)} · {awards.first.room}</p>
                 </div>
               </div>
             )}
@@ -561,7 +561,7 @@ export default function DisplayPage() {
                 <div>
                   <p className="text-xs font-black text-slate-600 uppercase tracking-widest mb-1">รองชนะเลิศ อันดับ 2</p>
                   <p className="font-black text-xl text-gray-900">{awards.second.name}</p>
-                  <p className="text-slate-500 text-sm font-semibold">หมายเลข {awards.second.number} · {awards.second.room}</p>
+                  <p className="text-slate-500 text-sm font-semibold">รหัส {playerCode(level, awards.second.number)} · {awards.second.room}</p>
                 </div>
               </div>
             )}
@@ -571,7 +571,7 @@ export default function DisplayPage() {
                 <div>
                   <p className="text-xs font-black text-purple-700 uppercase tracking-widest mb-1">อันดับ 3</p>
                   <p className="font-black text-xl text-gray-900">{awards.third.name}</p>
-                  <p className="text-purple-600 text-sm font-semibold">หมายเลข {awards.third.number} · {awards.third.room}</p>
+                  <p className="text-purple-600 text-sm font-semibold">รหัส {playerCode(level, awards.third.number)} · {awards.third.room}</p>
                 </div>
               </div>
             )}
@@ -585,7 +585,7 @@ export default function DisplayPage() {
                   {awards.participants.map(p => (
                     <div key={p.id} className={`flex justify-between text-sm py-1.5 border-b ${dk.text}`} style={{ borderColor: dk.border }}>
                       <span>{p.name}</span>
-                      <span className={`font-bold ${dk.subtext}`}>#{p.number}</span>
+                      <span className={`font-bold ${dk.subtext}`}>{playerCode(level, p.number)}</span>
                     </div>
                   ))}
                 </div>
